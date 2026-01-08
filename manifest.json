@@ -7,7 +7,8 @@
             "js": ["scripts/content.js"],
             "matches": [
                 "https://wd10.myworkday.com/*"
-            ]
+            ],
+            "css": ["buttons.css"]
         }
     ]
 }
