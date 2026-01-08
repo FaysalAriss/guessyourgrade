@@ -1,0 +1,13 @@
+{
+    "manifest_version": 3,
+    "name": "guess your grade",
+    "version": "1.0",
+    "content_scripts": [
+        {
+            "js": ["scripts/content.js"],
+            "matches": [
+                "https://wd10.myworkday.com/*"
+            ]
+        }
+    ]
+}
