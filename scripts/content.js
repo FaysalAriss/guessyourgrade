@@ -1,3 +1,9 @@
+//TODO: add way to customize letter grade ranges
+//TODO: clear grades as soon as table found in case rest doesn't work
+
+//important: sorted from low to high
+const letterGrades = ['F', 'D', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+'];
+
 function getNumberGrade(table){
     //exit if not a table
     if(!table){
@@ -59,47 +65,57 @@ function getNumberGrade(table){
     //mask/remove grades
     //skip header
     observer.disconnect(); //stop observing changes while we change or else infinite loop
-    for (var rowIndex = 1, row; row = table.rows[rowIndex]; rowIndex++) {
-        //console.log(row.cells[letterGradeIndex]);
-        if(rows[rowIndex][letterGradeIndex]){ //only remove existing grades
-            let letterGrade = row.cells[letterGradeIndex].textContent.trim();
-            let numberGrade = row.cells[numberGradeIndex].textContent.trim();
-            console.log(letterGrade);
-
-            //clear cell contents
-            row.cells[letterGradeIndex].textContent = "";
-            row.cells[numberGradeIndex].textContent = "";
-
-            const buttonWrapper = document.createElement("div");
-            buttonWrapper.classList.add("button-wrapper")
-
-            const buttonHigher = document.createElement("button");
-            buttonHigher.textContent = "PASS";
-            buttonHigher.classList.add("guess-button", "guess-button-higher");
-            buttonHigher.addEventListener("click", (event) => {
-                event.stopPropagation();
-                console.log("Higher clicked, "+letterGrade);
-                //do stuff
-            })
-            
-            const buttonLower = document.createElement("button");
-            buttonLower.textContent = "FAIL";
-            buttonLower.classList.add("guess-button", "guess-button-lower");
-            buttonLower.addEventListener("click", (event) => {
-                event.stopPropagation();
-                console.log("Lower clicked, "+numberGrade);
-                //do stuff
-            })
-            
-            buttonWrapper.append(buttonHigher, buttonLower);
-            row.cells[letterGradeIndex].append(buttonWrapper);
-        }
-
-    }
+    addButtonsToColumn(table, letterGradeIndex, rows);
+    addButtonsToColumn(table, numberGradeIndex, rows);
     //start observing again
     addObserverIfDesiredNodeAvailable();
     
 }
+
+function addButtonsToColumn(table, index, rows){
+    for (var rowIndex = 1, row; row = table.rows[rowIndex]; rowIndex++) {
+        if(rows[rowIndex][index]){ //only remove existing grades
+            //let letterGrade = letterGrades.indexOf(row.cells[index].textContent.trim());
+
+            //clear cell contents
+            row.cells[index].textContent = "";
+
+            const buttonWrapper = document.createElement("div");
+            buttonWrapper.classList.add("button-wrapper")
+
+            const guessText = document.createElement("h3");
+            guessText.classList.add("guess-text");
+            guessText.textContent = "F";
+
+            const buttonHigher = createGuessButton("higher", "Higher");
+            const buttonMiddle = createGuessButton("middle", "This");
+            const buttonLower = createGuessButton("lower", "Lower");
+            
+            buttonWrapper.append(guessText, buttonHigher, buttonMiddle, buttonLower);
+            row.cells[index].append(buttonWrapper);
+        }
+
+    }
+}
+
+const guessButtonGeneralClass = "guess-button";
+
+function createGuessButton(className, text){
+    const button = document.createElement("button");
+    button.textContent = text;
+    button.classList.add(guessButtonGeneralClass, guessButtonGeneralClass + "-" + className);
+    button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        console.log(text + "clicked");
+        //do stuff
+    });
+
+    return button;
+}
+
+// function nextGuess(){
+
+// }
 
 //check if there's a table after we've navigated the page
 const observer = new MutationObserver((mutations) => {

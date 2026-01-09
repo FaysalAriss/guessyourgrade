@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  align-items: center;
 }
 
 .guess-button{
@@ -26,6 +27,7 @@
   touch-action: manipulation;
   vertical-align: middle;
   white-space: nowrap;
+  min-width: fit-content;
 }
 
 .guess-button-higher{
@@ -41,6 +43,19 @@
   box-shadow: rgba(20, 70, 32, .2) 0 1px 0 inset;
 }
 
+.guess-button-middle{
+    background-color: #d5a51e;
+}
+
+.guess-button-middle:hover {
+  background-color: #c79a1e;
+}
+
+.guess-button-middle:active {
+  background-color: #c1951d;
+  box-shadow: rgba(20, 70, 32, .2) 0 1px 0 inset;
+}
+
 .guess-button-lower{
     background: #e0552eff;
 }
@@ -52,4 +67,8 @@
 .guess-button-lower:active {
   background-color: rgb(200, 76, 42);
   box-shadow: rgba(20, 70, 32, .2) 0 1px 0 inset;
+}
+
+.guess-text{
+  font-family: -apple-system,system-ui,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
 }
