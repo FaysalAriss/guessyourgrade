@@ -66,7 +66,7 @@ function getNumberGrade(table){
     //skip header
     observer.disconnect(); //stop observing changes while we change or else infinite loop
     addButtonsToColumn(table, letterGradeIndex, rows);
-    addButtonsToColumn(table, numberGradeIndex, rows);
+    //addButtonsToColumn(table, numberGradeIndex, rows);
     //start observing again
     addObserverIfDesiredNodeAvailable();
     
@@ -75,21 +75,105 @@ function getNumberGrade(table){
 function addButtonsToColumn(table, index, rows){
     for (var rowIndex = 1, row; row = table.rows[rowIndex]; rowIndex++) {
         if(rows[rowIndex][index]){ //only remove existing grades
-            //let letterGrade = letterGrades.indexOf(row.cells[index].textContent.trim());
+            let letterGrade = letterGrades.indexOf(row.cells[index].textContent.trim());
 
+            const originalContent = row.cells[index].innerHTML;
             //clear cell contents
             row.cells[index].textContent = "";
 
             const buttonWrapper = document.createElement("div");
             buttonWrapper.classList.add("button-wrapper")
 
+            let currentGuess = 0;
+            let high = 10;
+            let low = 0;
+
             const guessText = document.createElement("h3");
             guessText.classList.add("guess-text");
-            guessText.textContent = "F";
+            guessText.textContent = letterGrades[currentGuess];
+
 
             const buttonHigher = createGuessButton("higher", "Higher");
             const buttonMiddle = createGuessButton("middle", "This");
             const buttonLower = createGuessButton("lower", "Lower");
+
+            buttonHigher.addEventListener("click", (event) => {
+                event.stopPropagation();
+                console.log("Higher clicked");
+                if(currentGuess < letterGrade){
+                    //correct
+                    if(currentGuess == 0){
+                        guessText.textContent = "You passed!!";
+                    }else{
+                        guessText.textContent = "✓";
+                    }
+                    
+                    guessText.classList.add("checkmark");
+
+                    //update guess
+                    low = currentGuess + 1;
+
+                }else{
+                    //wrong
+                    //X for 0.2s
+                    guessText.textContent = "✗";
+                    guessText.classList.add("cross");
+                    if(currentGuess > letterGrade){
+                        high = currentGuess - 1;
+                    }else{
+                        high = currentGuess;
+                    }
+                } 
+
+                currentGuess = stayInRange(Math.round((high+low)/2), 0, 10);
+                setTimeout(() => {
+                    guessText.classList.remove("checkmark");
+                    guessText.classList.remove("cross");
+                    guessText.textContent = letterGrades[currentGuess];
+                }, 500);
+            });
+
+            buttonMiddle.addEventListener("click", (event) => {
+                event.stopPropagation();
+                console.log("Middle clicked");
+                //do stuff
+                if(currentGuess == letterGrade){
+                    //correct
+                    //done
+                    console.log("won");
+                    //row.cells[index] = originalContent;
+                    buttonWrapper.parentElement.innerHTML = originalContent;
+                    console.log(originalContent);
+                    console.log(buttonWrapper.parentElement);
+                }else{
+                    //wrong
+                    //X for 0.2s
+                }
+            });
+
+            buttonLower.addEventListener("click", (event) => {
+                event.stopPropagation();
+                console.log("Lower clicked");
+                //do stuff
+                if(currentGuess > letterGrade){
+                    //correct
+                    //checkmark for 0.2s
+
+                    //update guess
+                    high = currentGuess - 1;
+                }else if(currentGuess < letterGrade){
+                    //wrong
+                    //X for 0.2s
+
+                    //update guess
+                    low = currentGuess + 1;
+                }else{
+                    low = currentGuess;
+                }
+
+                currentGuess = stayInRange(Math.round((high+low)/2), 0, 10);
+                guessText.textContent = letterGrades[currentGuess];
+            });
             
             buttonWrapper.append(guessText, buttonHigher, buttonMiddle, buttonLower);
             row.cells[index].append(buttonWrapper);
@@ -104,18 +188,21 @@ function createGuessButton(className, text){
     const button = document.createElement("button");
     button.textContent = text;
     button.classList.add(guessButtonGeneralClass, guessButtonGeneralClass + "-" + className);
-    button.addEventListener("click", (event) => {
-        event.stopPropagation();
-        console.log(text + "clicked");
-        //do stuff
-    });
 
     return button;
 }
 
-// function nextGuess(){
+function stayInRange(num, low, high){
+    if(num < low){
+        return low;
+    }
 
-// }
+    if(num > high){
+        return high;
+    }
+
+    return num;
+}
 
 //check if there's a table after we've navigated the page
 const observer = new MutationObserver((mutations) => {

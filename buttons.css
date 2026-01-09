@@ -71,4 +71,14 @@
 
 .guess-text{
   font-family: -apple-system,system-ui,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.checkmark{
+    color: green;
+}
+
+.cross{
+    color: red;
 }
