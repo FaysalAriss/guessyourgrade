@@ -4,11 +4,12 @@
     "version": "1.0",
     "content_scripts": [
         {
-            "js": ["scripts/content.js"],
+            "js": ["scripts/confetti.js", "scripts/content.js"],
             "matches": [
                 "https://wd10.myworkday.com/*"
             ],
             "css": ["buttons.css"]
         }
     ]
+    
 }

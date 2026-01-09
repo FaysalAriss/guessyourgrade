@@ -1,5 +1,4 @@
 //TODO: add way to customize letter grade ranges
-//TODO: clear grades as soon as table found in case rest doesn't work
 
 //important: sorted from low to high
 const letterGrades = ['F', 'D', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+'];
@@ -10,11 +9,15 @@ function getNumberGrade(table){
         return;
     }
 
+    //save original table
+    const originalTable = table;
+    table = ""; //hide table immediately
+
     //turn table into 2D array
     var gradeTable = false;
     let rows = [];
 
-    for (var rowIndex = 0, row; row = table.rows[rowIndex]; rowIndex++) {
+    for (var rowIndex = 0, row; row = originalTable.rows[rowIndex]; rowIndex++) {
         rows.push([]);
         for (var cellIndex = 0, cell; cell = row.cells[cellIndex]; cellIndex++) {
             //search for first span (header), div (body) and get the trimmed text content
@@ -33,15 +36,21 @@ function getNumberGrade(table){
         }  
     }
 
-    console.log("Grade table:" + gradeTable);
+    console.log("Grade table: " + gradeTable);
     //console.log(rows);
 
-    //exit if not a grade table
+    //exit and reshow if not a grade table
     if(!gradeTable){
+        console.log("Displaying original table");
+        table = originalTable;
         return;
     }
 
-    //CourseSort and filter column
+    //tag table as mutated so we don't touch it again
+    console.log("Marking as touched");
+    originalTable.dataset.mutated = "true";
+
+    //Find letter and number grade column indices
     const headerIndex = 0;
     let letterGradeIndex = null;
     let numberGradeIndex = null;
@@ -54,19 +63,21 @@ function getNumberGrade(table){
         }
     }
 
-    //add clause for no percentage grade
+    //if grade table but can't find the grades abort without reshowing the table to avoid exposing the grades
     if(letterGradeIndex == null || numberGradeIndex == null){
         throw new Error("Couldn't identify indices of needed columns");
     }
 
-    console.log(letterGradeIndex + ", " + numberGradeIndex);
+    console.log("Letter and number grades column indices: " + letterGradeIndex + ", " + numberGradeIndex);
 
     console.log("Clearing grades and adding buttons");
     //mask/remove grades
     //skip header
     observer.disconnect(); //stop observing changes while we change or else infinite loop
-    addButtonsToColumn(table, letterGradeIndex, rows);
+    addButtonsToColumn(originalTable, letterGradeIndex, rows);
     //addButtonsToColumn(table, numberGradeIndex, rows);
+    //after grades removed reshow table
+    table = originalTable;
     //start observing again
     addObserverIfDesiredNodeAvailable();
     
@@ -82,11 +93,19 @@ function addButtonsToColumn(table, index, rows){
             row.cells[index].textContent = "";
 
             const buttonWrapper = document.createElement("div");
-            buttonWrapper.classList.add("button-wrapper")
+            buttonWrapper.classList.add("button-wrapper");
+
+            const canvas = document.createElement('canvas');
+            canvas.classList.add("canvas-confetti");
+            canvas.id = "confetti-" + rowIndex;
+            buttonWrapper.appendChild(canvas);
 
             let currentGuess = 0;
             let high = 10;
             let low = 0;
+
+            const defaultWaitingTime = 1000;
+            let waitingTime = defaultWaitingTime;
 
             const guessText = document.createElement("h3");
             guessText.classList.add("guess-text");
@@ -104,6 +123,25 @@ function addButtonsToColumn(table, index, rows){
                     //correct
                     if(currentGuess == 0){
                         guessText.textContent = "You passed!!";
+                      
+                        (async () => {
+                            if (!canvas.confetti) {
+                                canvas.confetti = await confetti.create(canvas, {
+                                resize: false
+                                });
+                            }
+
+                            canvas.confetti({
+                                particleCount: 500,
+                                spread: 50,
+                                origin: {x: 0, y: 0.5 },
+                                scalar: 0.6,
+                            });
+                        })();
+
+                        waitingTime = 2*defaultWaitingTime;
+
+
                     }else{
                         guessText.textContent = "✓";
                     }
@@ -130,7 +168,8 @@ function addButtonsToColumn(table, index, rows){
                     guessText.classList.remove("checkmark");
                     guessText.classList.remove("cross");
                     guessText.textContent = letterGrades[currentGuess];
-                }, 500);
+                }, waitingTime);
+                waitingTime = defaultWaitingTime;
             });
 
             buttonMiddle.addEventListener("click", (event) => {
@@ -143,8 +182,6 @@ function addButtonsToColumn(table, index, rows){
                     console.log("won");
                     //row.cells[index] = originalContent;
                     buttonWrapper.parentElement.innerHTML = originalContent;
-                    console.log(originalContent);
-                    console.log(buttonWrapper.parentElement);
                 }else{
                     //wrong
                     //X for 0.2s
@@ -206,19 +243,20 @@ function stayInRange(num, low, high){
 
 //check if there's a table after we've navigated the page
 const observer = new MutationObserver((mutations) => {
-    console.log("Mutated, checking for table");
-    const guessButton = document.querySelector(".button-wrapper");
-    if(guessButton){
-        console.log("Table found, buttons already added, skipping")
-        return; //don't redo when guess buttons already injected
-    }
+    console.log("Page mutated, checking for table");
     const table = document.querySelector('[data-testid="table"]');
     if(table){
-        console.log("Table found, attempting to fetch grades")
-        console.log(table);
-        getNumberGrade(table);
+        console.log("Table found")
+        if(table.dataset.mutated == "true"){
+            console.log("Game started, skipping")
+        }else{
+            console.log("Fresh table, attempting to fetch grades")
+            console.log(table);
+            getNumberGrade(table);
+        }
     }
 })
+
 
 //wait for main content as it should be available on all the pages so we won't be waiting forever, which is why we don't check for table
 function addObserverIfDesiredNodeAvailable() {
@@ -236,4 +274,3 @@ function addObserverIfDesiredNodeAvailable() {
     observer.observe(composeBox, config);
 }
 addObserverIfDesiredNodeAvailable();
-
