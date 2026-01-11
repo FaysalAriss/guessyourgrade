@@ -1,4 +1,5 @@
 //TODO: add way to customize letter grade ranges
+//todo make work on any table
 
 class Game{
 
@@ -54,19 +55,45 @@ class Game{
     }
         
     determineIndices(){
-
+        const headerGrid = [];
         const rows = this.tableHeader.rows;
-        for(var rowIndex = 0; rowIndex<rows.length; rowIndex++){
 
-            const cells = rows[rowIndex].cells;
-            for(var cellIndex = 0; cellIndex<cells.length; cellIndex++){
-                const cell = rows[rowIndex].cells[cellIndex];
-                const text = cell.querySelector('span')?.textContent.trim();
+        for(let rowIndex = 0; rowIndex<rows.length; rowIndex++){
+            const row = rows[rowIndex];
+            headerGrid[rowIndex] ||= [];
+            let cellIndex = 0;
+
+            for(const cell of row.cells){
+                const rowSpan = cell.rowSpan || 1;
+                const colSpan = cell.colSpan || 1;
+
+                //skip already occupied cell
+                while(headerGrid[rowIndex][cellIndex]){
+                    cellIndex++;
+                }
+
+                const text = cell.querySelector('span')?.textContent.trim(); //TODO: change to something for future proof, for any element other than span
                 if(text === "Grade"){
+                    if(this.letterGradeIndex || this.letterGradeIndex === 0){
+                        throw Error("already found column index for letter grade, but found again");
+                    }
                     this.letterGradeIndex = cellIndex;
-                }else if(text.includes("Percentage Grades")){
+                }else if(text?.includes("Percentage Grades")){
+                    if(this.numberGradeIndex || this.numberGradeIndex === 0){
+                        throw Error("already found column index for number grade, but found again");
+                    }
                     this.numberGradeIndex = cellIndex;
                 }
+
+                //occupy the necessary amount of rows
+                for(let r = rowIndex; r<rowIndex+rowSpan; r++){
+                    headerGrid[r] ||= [];
+                    for(let c = cellIndex; c<cellIndex+colSpan; c++){
+                        headerGrid[r][c] = true;
+                    }
+                }
+
+                cellIndex += colSpan;
             }
         }
 
@@ -101,15 +128,20 @@ class Game{
         while(cell){
             let content = cell.textContent.trim();
             let grade = gradeArray.indexOf(content);
+            console.log(content + ", " + grade);
 
             const originalContent = cell.innerHTML;
-            if(grade == -1 && content){ //non empty cell and not in the grade list
-                cell.textContent = "Error, grade not in possible grades";
-            }else{
-                //clear cell contents
-                cell.textContent = "";
-                const subGame = new SubGame(cell, grade, originalContent, idPrefix+rowIndex, gradeArray, startingGuess);
-                subGame.tempmain();
+
+            if(content){
+                if(grade == -1){
+                    //non empty cell and not in the grade list
+                    cell.textContent = "Error, grade not in possible grades";
+                }else{
+                    //clear cell contents
+                    cell.textContent = "";
+                    const subGame = new SubGame(cell, grade, originalContent, idPrefix+rowIndex, gradeArray, startingGuess);
+                    subGame.tempmain();
+                }
             }
 
             rowIndex++;
@@ -310,46 +342,47 @@ class SubGame{
 const observer = new MutationObserver((mutations) => {
 
     console.log("Page mutated, checking for table");
-    let table = document.querySelector('[data-testid="table"]');
-    
-    if(table){
-        console.log("Table found")
-        if(table.dataset.mutated == "true"){
-            console.log("Game started, skipping")
-        }else{
-            console.log("Fresh table, attempting to fetch grades")
-            console.log(table);
-            Game.markTable(table);
-            //save copy
-            const tableCopy = table.cloneNode(true);
-            //hide table
-            table.textContent = "";
-            const game = new Game(tableCopy);
-            const gradeTable = game.determineTableType();
-            if(gradeTable){
-                //try{
-                    game.determineIndices();
-                    observer.disconnect(); //stop observing changes while we change or else infinite loop
-                    game.addButtons();
-                    addObserverIfDesiredElementAvailable();
-                    console.log("Displaying game table");
-                    table.replaceWith(game.getTable());
-                    console.log(game.getTable());
-                // }catch(e){
-                //     console.log("Error occured: "+ e);
-                //     table.dataset.mutated = "true";
-                //     const errorText = document.createElement("h1");
-                //     errorText.classList.add("error-text");
-                //     errorText.textContent = "Error occured. Hiding table to not reveal anything. " + e;
-                //     observer.disconnect();
-                //     table.append(errorText);
-                //     addObserverIfDesiredElementAvailable();
-                // }
+    let tables = document.querySelectorAll('[data-testid="table"]');
+
+    for(const table of tables){
+        if(table){
+            console.log("Table found")
+            if(table.dataset.mutated == "true"){
+                console.log("Table already mutated, skipping")
             }else{
-                console.log("Displaying original table");
-                table = tableCopy;
+                console.log("Fresh table, attempting to fetch grades")
+                console.log(table);
+                Game.markTable(table);
+                //save copy
+                const tableCopy = table.cloneNode(true);
+                //hide table
+                table.textContent = "";
+                const game = new Game(tableCopy);
+                const gradeTable = game.determineTableType();
+                if(gradeTable){
+                    try{
+                        game.determineIndices();
+                        observer.disconnect(); //stop observing changes while we change or else infinite loop
+                        game.addButtons();
+                        addObserverIfDesiredElementAvailable();
+                        console.log("Displaying game table");
+                        table.replaceWith(game.getTable());
+                        console.log(game.getTable());
+                    }catch(e){
+                        console.log("Error occured: "+ e);
+                        const errorText = document.createElement("h1");
+                        errorText.classList.add("error-text");
+                        errorText.textContent = "Error occured. Hiding table to not reveal anything. " + e;
+                        observer.disconnect();
+                        table.append(errorText);
+                        addObserverIfDesiredElementAvailable();
+                    }
+                }else{
+                    console.log("Displaying original table");
+                    table.replaceWith(tableCopy);
+                }
+                
             }
-            
         }
     }
 })
