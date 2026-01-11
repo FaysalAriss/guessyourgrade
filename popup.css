@@ -1,0 +1,44 @@
+input{
+    field-sizing: content;
+}
+
+.label-input{
+    display: flex;
+    flex-direction: column;
+    width: fit-content;
+    height: fit-content;
+    gap: 4px;
+}
+
+.row{
+    display: flex;
+    flex-direction: row;
+    gap:8px;
+    width: fit-content;
+    height: fit-content;
+}
+
+body{
+    display: flex;  
+    flex-direction: column;
+    gap: 24px;
+
+
+}
+
+.header{
+    font-weight: 600;
+    font-size: 1.2rem;
+}
+
+.label{
+    font-size: 0.9rem;
+}
+
+label{
+    font-family: inter, arial;
+}
+
+html{
+  width: fit-content;
+}

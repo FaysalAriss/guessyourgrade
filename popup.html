@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Grade Roulette popup</title>
+        <link rel="stylesheet" href="popup.css">
+        <script src="popup.js"></script>
+    </head>
+    <body>
+        <div class="label-input">
+            <label class="header">Letter grades:</label>
+            <label class="label">Possible grades from lowest to highest, seperated by a comma:</label>
+            <div class="row">
+                <input type="text" size="30" id="letter-grade-input" placeholder="F, D, C-, C, C+, B-, B, B+, A-, A, A+", value="F, D, C-, C, C+, B-, B, B+, A-, A, A+">
+                <button id="letter-grade-reset">Reset</button>
+                <button id="letter-grade-save">Save</button>
+            </div>
+        </div>
+        
+        <div class="label-input">
+            <label class="header">Number grades:</label>
+            <div class="row">
+                <div class="label-input">
+                    <label class="label">Minimum:</label>
+                    <input type="number" placeholder="minimum grade" value="0">
+                </div>
+                <div class="label-input">
+                    <label class="label">Maximum:</label>
+                    <input type="number" placeholder="maximum grade" value="100">
+                </div>
+                <div class="label-input">
+                    <label class="label">Resolution:</label>
+                    <input type="number" placeholder="resolution" value="1">
+                </div>
+                <div class="label-input">
+                    <button id="number-grade-reset">Reset</button>
+                    <button id="number-grade-save">Save</button>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
