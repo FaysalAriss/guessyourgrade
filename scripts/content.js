@@ -1,5 +1,4 @@
 //TODO: add way to customize letter grade ranges
-//todo make work on any table
 
 class Game{
 
@@ -113,7 +112,7 @@ class Game{
             this.addButtonsToColumn(this.letterGradeIndex, Game.letterGrades, "letter", 0);
         }
         if(this.numberGradeIndex){
-            this.addButtonsToColumn(this.numberGradeIndex, Game.numberGrades, "number", 50);
+            this.addButtonsToColumn(this.numberGradeIndex, Game.numberGrades, "number", 49);
         }
         
     }
@@ -154,14 +153,13 @@ class Game{
 }
 
 class SubGame{
-
-    
     static defaultWaitingTime = 1000;
     lowest;
     highest;
 
     guessText;
     gameWrapper;
+    canvas;
 
     constructor (cell, grade, originalContent, id, gradeArray, startingGuess){
         this.cell = cell;
@@ -221,25 +219,58 @@ class SubGame{
         this.guessText.classList.add("cross");
     }
 
+    pass(){
+        this.firstGuess = false;
+        this.guessText.textContent = "You passed!!";
+        this.guessText.classList.add("checkmark");
+    
+        //confetti
+        SubGame.confetti(this.canvas);
+
+        this.waitingTime = 2*SubGame.defaultWaitingTime;
+    }
+
     updateGuess(){
         //binary search for your grade
         this.currentGuess = SubGame.stayInRange(Math.round((this.high+this.low)/2), this.lowest, this.highest);
+    }
+
+    updateText(){
         setTimeout(() => {
-            this.guessText.classList.remove("checkmark");
-            this.guessText.classList.remove("cross");
+            this.resetTags();
             this.guessText.textContent = this.gradeArray[this.currentGuess];
         }, this.waitingTime);
         this.waitingTime = SubGame.defaultWaitingTime;
+    }
+
+    resetTags(){
+        this.guessText.classList.remove("checkmark");
+        this.guessText.classList.remove("cross");
+    }
+
+    static async confetti(canvas){
+        if (!canvas.confetti) {
+            canvas.confetti = await confetti.create(canvas, {
+            resize: false
+            });
+        }
+
+        canvas.confetti({
+            particleCount: 500,
+            spread: 50,
+            origin: {x: 0, y: 0.5 },
+            scalar: 0.6,
+        });
     }
     
     tempmain(){
         this.gameWrapper = document.createElement("div");
         this.gameWrapper.classList.add("game-wrapper");
 
-        const canvas = document.createElement('canvas');
-        canvas.classList.add("canvas-confetti");
-        canvas.id = "confetti-" + this.id;
-        this.gameWrapper.appendChild(canvas);
+        this.canvas = document.createElement('canvas');
+        this.canvas.classList.add("canvas-confetti");
+        this.canvas.id = "confetti-" + this.id;
+        this.gameWrapper.appendChild(this.canvas);
 
         this.guessText = document.createElement("h3");
         this.guessText.classList.add("guess-text");
@@ -253,35 +284,11 @@ class SubGame{
             event.stopPropagation();
             console.log("Higher clicked");
             if(this.currentGuess < this.grade){
-                //correct
                 if(this.firstGuess){
-                    this.firstGuess = false;
-                    this.guessText.textContent = "You passed!!";
-                    this.guessText.classList.add("checkmark");
-                
-                    //confetti
-                    (async () => {
-                        if (!canvas.confetti) {
-                            canvas.confetti = await confetti.create(canvas, {
-                            resize: false
-                            });
-                        }
-
-                        canvas.confetti({
-                            particleCount: 500,
-                            spread: 50,
-                            origin: {x: 0, y: 0.5 },
-                            scalar: 0.6,
-                        });
-                    })();
-
-                    this.waitingTime = 2*SubGame.defaultWaitingTime;
-
-
+                    this.pass();
                 }else{
                     this.right();
                 }
-
             }else{
                 this.wrong();
             } 
@@ -293,6 +300,7 @@ class SubGame{
             }
 
             this.updateGuess();
+            this.updateText();
         });
 
         buttonMiddle.addEventListener("click", (event) => {
@@ -309,7 +317,7 @@ class SubGame{
                 
             }else{
                 this.wrong();
-                this.updateGuess();
+                this.updateText();
             }
         });
 
@@ -320,7 +328,11 @@ class SubGame{
             if(this.currentGuess > this.grade){
                 this.right();
             }else{
-                this.wrong();
+                if(this.firstGuess){
+                    this.pass();
+                }else{
+                    this.wrong();
+                }
             }
 
             if(this.currentGuess == this.grade){
@@ -330,6 +342,7 @@ class SubGame{
             }
 
             this.updateGuess();
+            this.updateText();
         });
         
         this.gameWrapper.append(this.guessText, buttonHigher, buttonMiddle, buttonLower);
