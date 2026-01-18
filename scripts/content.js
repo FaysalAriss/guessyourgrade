@@ -1,11 +1,10 @@
-//TODO: add way to customize letter grade ranges
-//TODO: on first extension load, save default grade ranges to storage
 //TODO: custom table header search
+//add tooltips to settings
 
 class Game{
 
     //important: sorted from low to high
-    static letterGrades = [];
+    static letterGrades = ['F', 'D', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+'];
     static numberGrades = [];
     static guessButtonGeneralClass = "guess-button";
     static headerIndex = 0;
@@ -18,6 +17,10 @@ class Game{
         this.gradeTable = false;
         this.letterGradeIndex = null;
         this.numberGradeIndex = null;
+
+        for(var i = 0; i <= 100; i++){
+            Game.numberGrades.push(i.toString()); //number/letter are strings in the table cell
+        }
     }
 
     getTable(){
@@ -50,6 +53,23 @@ class Game{
         console.log("Marking as touched");
         table.dataset.mutated = "true";
     }
+
+ getUserVisibleText(el) {
+  return [...el.childNodes]
+    .filter(node => {
+      if (node.nodeType === Node.TEXT_NODE) return true;
+      if (node.nodeType !== Node.ELEMENT_NODE) return false;
+
+      return !node.hasAttribute("data-testid") ||
+             node.getAttribute("data-testid") !== "screenReader";
+    })
+    .map(node => node.textContent)
+    .join("")
+    .trim();
+}
+
+
+
         
     determineIndices(){
         const headerGrid = [];
@@ -69,7 +89,10 @@ class Game{
                     cellIndex++;
                 }
 
-                const text = cell.querySelector('span')?.textContent.trim(); //TODO: change to something for future proof, for any element other than span
+                const label = cell.cloneNode(true);
+                label.querySelector('[data-testid="screenReader"]')?.remove();
+                const text = label.innerText.trim();
+                console.log(text);
                 if(text === "Grade"){
                     if(this.letterGradeIndex || this.letterGradeIndex === 0){
                         throw Error("already found column index for letter grade, but found again");
@@ -108,8 +131,12 @@ class Game{
 
         const result = await chrome.storage.sync.get(["letterGradesArray", "numberGrades"]);
 
-        Game.letterGrades = result.letterGradesArray;
-        Game.numberGrades = result.numberGrades;
+        if(result.letterGradesArray){
+            Game.letterGrades = result.letterGradesArray;
+        }
+        if(result.numberGrades){
+            Game.numberGrades = result.numberGrades;
+        }
 
         if(!Game.letterGrades || !Game.numberGrades ||
         Game.letterGrades.length === 0 || Game.numberGrades.length === 0){
@@ -138,7 +165,7 @@ class Game{
             let grade = gradeArray.indexOf(content);
             console.log(content + ", " + grade);
 
-            const originalContent = cell.cloneNode(true);
+            const originalContent = cell.innerHTML;
 
             if(content){
                 if(grade == -1){
@@ -318,7 +345,7 @@ class SubGame{
 
             if(this.currentGuess == this.grade){
                 console.log("won");
-                this.gameWrapper.replaceWith(this.originalContent);
+                this.gameWrapper.parentElement.innerHTML = this.originalContent;
                 return;                
             }else{
                 this.wrong();
