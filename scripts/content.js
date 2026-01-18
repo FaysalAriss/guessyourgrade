@@ -1,9 +1,10 @@
 //TODO: add way to customize letter grade ranges
+//TODO: on first extension load, save default grade ranges to storage
 
 class Game{
 
     //important: sorted from low to high
-    static letterGrades = ['F', 'D', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+'];
+    static letterGrades = [];
     static numberGrades = [];
     static guessButtonGeneralClass = "guess-button";
     static headerIndex = 0;
@@ -16,10 +17,6 @@ class Game{
         this.gradeTable = false;
         this.letterGradeIndex = null;
         this.numberGradeIndex = null;
-
-        for(var i = 0; i <= 100; i++){
-            Game.numberGrades.push(i.toString()); //number/letter are strings in the table cell
-        }
     }
 
     getTable(){
@@ -107,19 +104,35 @@ class Game{
         
     addButtons(){
         console.log("Clearing grades and adding buttons");
-        
-        if(this.letterGradeIndex){
-            this.addButtonsToColumn(this.letterGradeIndex, Game.letterGrades, "letter", 0);
-        }
-        if(this.numberGradeIndex){
-            this.addButtonsToColumn(this.numberGradeIndex, Game.numberGrades, "number", 49);
-        }
+
+        chrome.storage.sync.get(
+            ["letterGradesArray", "numberGrades"],
+            (result) => {
+                Game.letterGrades = result.letterGradesArray;
+                Game.numberGrades = result.numberGrades;
+
+                if(!Game.letterGrades || !Game.numberGrades ||
+                Game.letterGrades.length === 0 || Game.numberGrades.length === 0){
+                    console.log(Game.letterGrades);
+                    console.log(Game.numberGrades);
+                    throw Error("Settings are invalid or couldn't load them (letter/number grade ranges)"); 
+                }
+                
+                if(this.letterGradeIndex){
+                    this.addButtonsToColumn(this.letterGradeIndex, Game.letterGrades, "letter", 0);
+                }
+                if(this.numberGradeIndex){
+                    this.addButtonsToColumn(this.numberGradeIndex, Game.numberGrades, "number", 49);
+                }
+            }
+        );
+
+
         
     }
 
     addButtonsToColumn(index, gradeArray, idPrefix, startingGuess){
         //mask/remove grades
-        //skip header
         const tableBody = this.table.querySelector("tbody");
 
         let rowIndex = 0;

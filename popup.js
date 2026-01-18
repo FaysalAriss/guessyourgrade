@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelector("#number-grade-save").addEventListener("click", event => saveNumberGrade(event.currentTarget));
 })
 
-function confirmButton(button, newText, delay=3000){
+function confirmButton(button, newText="Succesfull", delay=3000){
     const currentText = button.textContent;
     button.textContent = newText;
     setTimeout(() => {
@@ -31,7 +31,7 @@ function saveLetterGrade(button){
     console.log(letterGradesArray);
 
     chrome.storage.sync.set(
-        {letterG: letterGradesArray}, 
+        {letterGrades: letterGrades, letterGradesArray: letterGradesArray}, 
         () => {
         confirmButton(button, "Succesfull");
     });
@@ -60,8 +60,24 @@ function saveNumberGrade(button){
     }
 
     chrome.storage.sync.set(
-        {numberG: numberGrades},
+        {min: min, max: max, resolution: resolution, numberGrades: numberGrades},
         () => {
             confirmButton(button, "Succesfull");   
     });
 }
+
+// Restores select box and checkbox state using the preferences
+// stored in chrome.storage.
+const restoreOptions = () => {
+  chrome.storage.sync.get(
+    { letterGrades: letterGradeDefault, min: numberGradeMinDefault, max: numberGradeMaxDefault, resolution: numberGradeResolutionDefault },
+    (items) => {
+      document.getElementById('letter-grade-input').value = items.letterGrades;
+      document.getElementById('number-grade-minimium').value = items.min;
+      document.getElementById('number-grade-maximum').value = items.max;
+      document.getElementById('number-grade-resolution').value = items.resolution;
+    }
+  );
+};
+
+document.addEventListener('DOMContentLoaded', restoreOptions);
