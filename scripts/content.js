@@ -1,5 +1,6 @@
 //TODO: add way to customize letter grade ranges
 //TODO: on first extension load, save default grade ranges to storage
+//TODO: custom table header search
 
 class Game{
 
@@ -102,32 +103,27 @@ class Game{
     }
 
         
-    addButtons(){
+    async addButtons(){
         console.log("Clearing grades and adding buttons");
 
-        chrome.storage.sync.get(
-            ["letterGradesArray", "numberGrades"],
-            (result) => {
-                Game.letterGrades = result.letterGradesArray;
-                Game.numberGrades = result.numberGrades;
+        const result = await chrome.storage.sync.get(["letterGradesArray", "numberGrades"]);
 
-                if(!Game.letterGrades || !Game.numberGrades ||
-                Game.letterGrades.length === 0 || Game.numberGrades.length === 0){
-                    console.log(Game.letterGrades);
-                    console.log(Game.numberGrades);
-                    throw Error("Settings are invalid or couldn't load them (letter/number grade ranges)"); 
-                }
-                
-                if(this.letterGradeIndex){
-                    this.addButtonsToColumn(this.letterGradeIndex, Game.letterGrades, "letter", 0);
-                }
-                if(this.numberGradeIndex){
-                    this.addButtonsToColumn(this.numberGradeIndex, Game.numberGrades, "number", 49);
-                }
-            }
-        );
+        Game.letterGrades = result.letterGradesArray;
+        Game.numberGrades = result.numberGrades;
 
+        if(!Game.letterGrades || !Game.numberGrades ||
+        Game.letterGrades.length === 0 || Game.numberGrades.length === 0){
+            console.log(Game.letterGrades);
+            console.log(Game.numberGrades);
+            throw Error("Settings are invalid or couldn't load them (letter/number grade ranges)"); 
+        }
 
+        if(this.letterGradeIndex){
+            this.addButtonsToColumn(this.letterGradeIndex, Game.letterGrades, "letter", 0);
+        }
+        if(this.numberGradeIndex){
+            this.addButtonsToColumn(this.numberGradeIndex, Game.numberGrades, "number", 49);
+        }
         
     }
 
@@ -142,7 +138,7 @@ class Game{
             let grade = gradeArray.indexOf(content);
             console.log(content + ", " + grade);
 
-            const originalContent = cell.innerHTML;
+            const originalContent = cell.cloneNode(true);
 
             if(content){
                 if(grade == -1){
@@ -152,7 +148,7 @@ class Game{
                     //clear cell contents
                     cell.textContent = "";
                     const subGame = new SubGame(cell, grade, originalContent, idPrefix+rowIndex, gradeArray, startingGuess);
-                    subGame.tempmain();
+                    subGame.startGame();
                 }
             }
 
@@ -276,7 +272,7 @@ class SubGame{
         });
     }
     
-    tempmain(){
+    startGame(){
         this.gameWrapper = document.createElement("div");
         this.gameWrapper.classList.add("game-wrapper");
 
@@ -319,15 +315,11 @@ class SubGame{
         buttonMiddle.addEventListener("click", (event) => {
             event.stopPropagation();
             console.log("Middle clicked");
-            //do stuff
+
             if(this.currentGuess == this.grade){
-                //correct
-                //done
                 console.log("won");
-                this.gameWrapper.parentElement.innerHTML = this.originalContent;
-                return;
-                //row.cells[index] = originalContent;
-                
+                this.gameWrapper.replaceWith(this.originalContent);
+                return;                
             }else{
                 this.wrong();
                 this.updateText();
@@ -365,7 +357,7 @@ class SubGame{
 }
 
 //check if there's a table after we've navigated the page
-const observer = new MutationObserver((mutations) => {
+const observer = new MutationObserver(async (mutations) => {
 
     console.log("Page mutated, checking for table");
     let tables = document.querySelectorAll('[data-testid="table"]');
@@ -382,6 +374,7 @@ const observer = new MutationObserver((mutations) => {
                 //save copy
                 const tableCopy = table.cloneNode(true);
                 //hide table
+                console.log("Hiding table")
                 table.textContent = "";
                 const game = new Game(tableCopy);
                 const gradeTable = game.determineTableType();
@@ -389,7 +382,7 @@ const observer = new MutationObserver((mutations) => {
                     try{
                         game.determineIndices();
                         observer.disconnect(); //stop observing changes while we change or else infinite loop
-                        game.addButtons();
+                        await game.addButtons();
                         addObserverIfDesiredElementAvailable();
                         console.log("Displaying game table");
                         table.replaceWith(game.getTable());

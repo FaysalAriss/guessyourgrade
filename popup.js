@@ -1,4 +1,4 @@
-const letterGradeDefault = "F, D, C-, C, C+, B-, B, B+, A-, A, A+", value="F, D, C-, C, C+, B-, B, B+, A-, A, A+";
+const letterGradeDefault = "F, D, C-, C, C+, B-, B, B+, A-, A, A+";
 const numberGradeMinDefault = 0;
 const numberGradeMaxDefault = 100;
 const numberGradeResolutionDefault = 1;
