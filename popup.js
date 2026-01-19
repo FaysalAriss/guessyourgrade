@@ -1,7 +1,11 @@
 const letterGradeDefault = "F, D, C-, C, C+, B-, B, B+, A-, A, A+";
+const letterHeaderSearchDefault = "Percentage Grades";
+const letterMatchWholeDefault = true;
 const numberGradeMinDefault = 0;
 const numberGradeMaxDefault = 100;
 const numberGradeResolutionDefault = 1;
+const numberHeaderSearchDefault = "Grade";
+const numberMatchWholeDefault = false;
 
 document.addEventListener("DOMContentLoaded", () => {
     document.querySelector("#letter-grade-reset").addEventListener("click", () => resetLetterGrade());
@@ -20,18 +24,23 @@ function confirmButton(button, newText="Succesfull", delay=3000){
 
 function resetLetterGrade(){
     document.getElementById("letter-grade-input").value = letterGradeDefault;
+    document.getElementById("letter-grade-header").value = letterHeaderSearchDefault;
+    document.getElementById("letter-grade-checkbox").checked = letterMatchWholeDefault;
     saveLetterGrade(document.getElementById("letter-grade-reset"));
 }
 
 function saveLetterGrade(button){
     const letterGrades = document.getElementById("letter-grade-input").value;
     const letterGradesArray = letterGrades.split(",").map(item => item.trim()).filter(item => item || item === 0);
+    const letterHeaderSearch = document.getElementById("letter-grade-header").value;
+    const letterMatchWhole = document.getElementById("letter-grade-checkbox").checked;
+    
 
     console.log(letterGrades);
     console.log(letterGradesArray);
 
     chrome.storage.sync.set(
-        {letterGrades: letterGrades, letterGradesArray: letterGradesArray}, 
+        {letterGrades: letterGrades, letterGradesArray: letterGradesArray, letterHeaderSearch: letterHeaderSearch, letterMatchWhole: letterMatchWhole}, 
         () => {
         confirmButton(button, "Succesfull");
     });
@@ -41,41 +50,60 @@ function resetNumberGrade(){
     document.getElementById("number-grade-minimum").value = numberGradeMinDefault;
     document.getElementById("number-grade-maximum").value = numberGradeMaxDefault;
     document.getElementById("number-grade-resolution").value = numberGradeResolutionDefault;
+    document.getElementById("number-grade-header").value = numberHeaderSearchDefault;
+    document.getElementById("number-grade-checkbox").checked = numberMatchWholeDefault;
     saveNumberGrade(document.getElementById("number-grade-reset"));
 }
 
 function saveNumberGrade(button){
-    const min = Number(document.getElementById("number-grade-minimum").value);
-    const max = Number(document.getElementById("number-grade-maximum").value);
-    const resolution = Number(document.getElementById("number-grade-resolution").value);
+    const numberGradeMin = Number(document.getElementById("number-grade-minimum").value);
+    const numberGradeMax = Number(document.getElementById("number-grade-maximum").value);
+    const numberGradeResolution = Number(document.getElementById("number-grade-resolution").value);
+    const numberHeaderSearch = document.getElementById("number-grade-header").value;
+    const numberMatchWhole = document.getElementById("number-grade-checkbox").checked;
 
-    if(resolution <= 0){
+    if(numberGradeResolution <= 0){
         confirmButton(button, "Invalid");
         return;
     }
 
     let numberGrades = [];
-    for(let i = min; i <= max; i += resolution){
+    for(let i = numberGradeMin; i <= numberGradeMax; i += numberGradeResolution){
         numberGrades.push(i.toString());
     }
 
-    chrome.storage.sync.set(
-        {min: min, max: max, resolution: resolution, numberGrades: numberGrades},
-        () => {
+    chrome.storage.sync.set({
+        numberGradeMin: numberGradeMin, 
+        numberGradeMax: numberGradeMax, 
+        numberGradeResolution: numberGradeResolution, 
+        numberGrades: numberGrades, 
+        numberHeaderSearch: numberHeaderSearch, 
+        numberMatchWhole: numberMatchWhole
+        }, () => {
             confirmButton(button, "Succesfull");   
     });
 }
 
 // Restores select box and checkbox state using the preferences
-// stored in chrome.storage.
 const restoreOptions = () => {
-  chrome.storage.sync.get(
-    { letterGrades: letterGradeDefault, min: numberGradeMinDefault, max: numberGradeMaxDefault, resolution: numberGradeResolutionDefault },
-    (items) => {
-      document.getElementById('letter-grade-input').value = items.letterGrades;
-      document.getElementById('number-grade-minimium').value = items.min;
-      document.getElementById('number-grade-maximum').value = items.max;
-      document.getElementById('number-grade-resolution').value = items.resolution;
+  chrome.storage.sync.get({
+        letterGrades: letterGradeDefault,
+        letterHeaderSearch: letterHeaderSearchDefault,
+        letterMatchWhole: letterMatchWholeDefault,
+        numberGradeMin: numberGradeMinDefault, 
+        numberGradeMax: numberGradeMaxDefault, 
+        numberGradeResolution: numberGradeResolutionDefault,
+        numberHeaderSearch: numberHeaderSearchDefault,
+        numberMatchWhole: numberMatchWholeDefault
+    }, (items) => {
+        document.getElementById('letter-grade-input').value = items.letterGrades;
+        document.getElementById("letter-grade-header").value = items.letterHeaderSearch;
+        document.getElementById("letter-grade-checkbox").checked = items.letterMatchWhole;
+        document.getElementById('number-grade-minimum').value = items.numberGradeMin;
+        document.getElementById('number-grade-maximum').value = items.numberGradeMax;
+        document.getElementById('number-grade-resolution').value = items.numberGradeResolution;
+        document.getElementById("number-grade-header").value = items.numberHeaderSearch;
+        document.getElementById("number-grade-checkbox").checked = items.numberMatchWhole;
     }
   );
 };

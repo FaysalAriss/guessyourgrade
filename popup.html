@@ -6,18 +6,31 @@
         <script src="popup.js"></script>
     </head>
     <body>
-        <div class="label-input">
-            <label class="header">Letter grades:</label>
-            <label class="label">Possible grades from lowest to highest, seperated by a comma:</label>
+        <fieldset>
+            <legend>Letter grades:</legend>
+
+            <div>
+                <label class="label">Possible grades from lowest to highest, seperated by a comma:</label>
+                <input type="text" id="letter-grade-input" placeholder="F, D, C-, C, C+, B-, B, B+, A-, A, A+", value="F, D, C-, C, C+, B-, B, B+, A-, A, A+">
+            </div>
+            <br>
+            <label class="label">Header title:</label>
             <div class="row">
-                <input type="text" size="30" id="letter-grade-input" placeholder="F, D, C-, C, C+, B-, B, B+, A-, A, A+", value="F, D, C-, C, C+, B-, B, B+, A-, A, A+">
+                <input type="text" id="letter-grade-header" placeholder="Percentage Grades" value="Percentage Grades">
+                <div class="checkbox-input">
+                    <input type="checkbox" id="letter-grade-checkbox" checked>
+                    <label class="label">Match whole word</label>
+                </div>
+            </div>
+            <br>
+            <div>
                 <button id="letter-grade-reset">Reset</button>
                 <button id="letter-grade-save">Save</button>
             </div>
-        </div>
+        </fieldset>
         
-        <div class="label-input">
-            <label class="header">Number grades:</label>
+        <fieldset>
+            <legend>Number grades:</legend>
             <div class="row">
                 <div class="label-input">
                     <label class="label">Minimum:</label>
@@ -31,11 +44,21 @@
                     <label class="label">Resolution:</label>
                     <input id="number-grade-resolution" type="number" placeholder="resolution" value="1">
                 </div>
-                <div class="label-input">
-                    <button id="number-grade-reset">Reset</button>
-                    <button id="number-grade-save">Save</button>
-                </div>
             </div>
-        </div>
+            <br>
+            <label class="label">Header title:</label>
+            <div class="row">
+                <input type="text" id="number-grade-header" placeholder="Grade" value="Grade">
+                <div class="checkbox-input">
+                    <input type="checkbox" id="number-grade-checkbox">
+                    <label class="label">Match whole word</label>
+                </div> 
+            </div>
+            <br>
+            <div>
+                <button id="number-grade-reset">Reset</button>
+                <button id="number-grade-save">Save</button>
+            </div>
+        </fieldset>
     </body>
 </html>

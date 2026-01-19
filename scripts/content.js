@@ -53,23 +53,6 @@ class Game{
         console.log("Marking as touched");
         table.dataset.mutated = "true";
     }
-
- getUserVisibleText(el) {
-  return [...el.childNodes]
-    .filter(node => {
-      if (node.nodeType === Node.TEXT_NODE) return true;
-      if (node.nodeType !== Node.ELEMENT_NODE) return false;
-
-      return !node.hasAttribute("data-testid") ||
-             node.getAttribute("data-testid") !== "screenReader";
-    })
-    .map(node => node.textContent)
-    .join("")
-    .trim();
-}
-
-
-
         
     determineIndices(){
         const headerGrid = [];
@@ -220,18 +203,6 @@ class SubGame{
         return button;
     }
 
-    static stayInRange(num, low, high){
-        if(num < low){
-            return low;
-        }
-
-        if(num > high){
-            return high;
-        }
-
-        return num;
-    }
-
     /**
      * Advance the high/low of the game
      * 
@@ -268,7 +239,8 @@ class SubGame{
 
     updateGuess(){
         //binary search for your grade
-        this.currentGuess = SubGame.stayInRange(Math.round((this.high+this.low)/2), this.lowest, this.highest);
+        const newGuess = Math.round((this.high+this.low)/2);
+        this.currentGuess = Math.min(Math.max(newGuess, this.lowest), this.highest);
     }
 
     updateText(){

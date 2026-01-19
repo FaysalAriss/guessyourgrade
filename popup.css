@@ -26,7 +26,7 @@ body{
 
 }
 
-.header{
+legend{
     font-weight: 600;
     font-size: 1.2rem;
 }
@@ -35,10 +35,16 @@ body{
     font-size: 0.9rem;
 }
 
-label{
-    font-family: inter, arial;
+*{
+    font-family: "Fira Sans", "Inter", arial;
 }
 
 html{
   width: fit-content;
+}
+
+.checkbox-input{
+    display: flex;
+    gap: 40x;
+    align-items: center;
 }
