@@ -7,11 +7,20 @@ const numberGradeResolutionDefault = 1;
 const numberHeaderSearchDefault = "Grade";
 const numberMatchWholeDefault = false;
 
+//TODO: transfer array creating functionality to content script, maybe
+
+class IllegalArgumentError extends Error{
+    constructor(message){
+        super(message);
+        this.name = "IllegalArgumentError";
+    }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-    document.querySelector("#letter-grade-reset").addEventListener("click", () => resetLetterGrade());
-    document.querySelector("#letter-grade-save").addEventListener("click", event => saveLetterGrade(event.currentTarget));
-    document.querySelector("#number-grade-reset").addEventListener("click", () => resetNumberGrade());
-    document.querySelector("#number-grade-save").addEventListener("click", event => saveNumberGrade(event.currentTarget));
+    document.querySelector("#letter-grade-reset").addEventListener("click", (event) => {handleButtonClick(event.currentTarget, resetLetterGrade)});
+    document.querySelector("#letter-grade-save").addEventListener("click", (event) => {handleButtonClick(event.currentTarget, saveLetterGrade)});
+    document.querySelector("#number-grade-reset").addEventListener("click", (event) => {handleButtonClick(event.currentTarget, resetNumberGrade)});
+    document.querySelector("#number-grade-save").addEventListener("click", (event) => {handleButtonClick(event.currentTarget, saveNumberGrade)});
 })
 
 function confirmButton(button, newText="Succesfull", delay=3000){
@@ -22,40 +31,63 @@ function confirmButton(button, newText="Succesfull", delay=3000){
     }, delay);
 }
 
-function resetLetterGrade(){
+async function handleButtonClick(button, action){
+    button.disabled = true;
+
+    try{
+        await action();
+        confirmButton(button, "Succesfull");
+    }catch(error){
+        if(error instanceof IllegalArgumentError){
+            confirmButton(button, error.message);
+        }else{
+            console.error("Action failed: ", error);
+            confirmButton(button, "System Error");
+        }
+    }finally{
+        button.disabled = false;
+    }
+}
+
+async function resetLetterGrade(){
     document.getElementById("letter-grade-input").value = letterGradeDefault;
     document.getElementById("letter-grade-header").value = letterHeaderSearchDefault;
     document.getElementById("letter-grade-checkbox").checked = letterMatchWholeDefault;
-    saveLetterGrade(document.getElementById("letter-grade-reset"));
+
+    await saveLetterGrade();
+    console.log("Reset and save complete");
 }
 
-function saveLetterGrade(button){
+async function saveLetterGrade(){
     const letterGrades = document.getElementById("letter-grade-input").value;
     const letterGradesArray = letterGrades.split(",").map(item => item.trim()).filter(item => item || item === 0);
     const letterHeaderSearch = document.getElementById("letter-grade-header").value;
     const letterMatchWhole = document.getElementById("letter-grade-checkbox").checked;
     
+    if(!letterGrades || !letterHeaderSearch){
+        throw new IllegalArgumentError("Error: empty field");
+    }
 
-    console.log(letterGrades);
-    console.log(letterGradesArray);
-
-    chrome.storage.sync.set(
-        {letterGrades: letterGrades, letterGradesArray: letterGradesArray, letterHeaderSearch: letterHeaderSearch, letterMatchWhole: letterMatchWhole}, 
-        () => {
-        confirmButton(button, "Succesfull");
+    await chrome.storage.sync.set({
+        letterGrades: letterGrades, 
+        letterGradesArray: letterGradesArray,
+        letterHeaderSearch: letterHeaderSearch,
+        letterMatchWhole: letterMatchWhole
     });
 }
 
-function resetNumberGrade(){
+async function resetNumberGrade(){
     document.getElementById("number-grade-minimum").value = numberGradeMinDefault;
     document.getElementById("number-grade-maximum").value = numberGradeMaxDefault;
     document.getElementById("number-grade-resolution").value = numberGradeResolutionDefault;
     document.getElementById("number-grade-header").value = numberHeaderSearchDefault;
     document.getElementById("number-grade-checkbox").checked = numberMatchWholeDefault;
-    saveNumberGrade(document.getElementById("number-grade-reset"));
+
+    await saveNumberGrade();
+    console.log("Reset and save complete");
 }
 
-function saveNumberGrade(button){
+async function saveNumberGrade(){
     const numberGradeMin = Number(document.getElementById("number-grade-minimum").value);
     const numberGradeMax = Number(document.getElementById("number-grade-maximum").value);
     const numberGradeResolution = Number(document.getElementById("number-grade-resolution").value);
@@ -63,8 +95,11 @@ function saveNumberGrade(button){
     const numberMatchWhole = document.getElementById("number-grade-checkbox").checked;
 
     if(numberGradeResolution <= 0){
-        confirmButton(button, "Invalid");
-        return;
+        throw new IllegalArgumentError("Resolution must be positive");
+    }
+
+    if((!numberGradeMin && numberGradeMin !== 0) || (!numberGradeMax && numberGradeMax !== 0) || !numberGradeResolution || !numberHeaderSearch){
+        throw new IllegalArgumentError("Error: empty field");
     }
 
     let numberGrades = [];
@@ -72,15 +107,13 @@ function saveNumberGrade(button){
         numberGrades.push(i.toString());
     }
 
-    chrome.storage.sync.set({
+    await chrome.storage.sync.set({
         numberGradeMin: numberGradeMin, 
         numberGradeMax: numberGradeMax, 
         numberGradeResolution: numberGradeResolution, 
         numberGrades: numberGrades, 
         numberHeaderSearch: numberHeaderSearch, 
         numberMatchWhole: numberMatchWhole
-        }, () => {
-            confirmButton(button, "Succesfull");   
     });
 }
 
