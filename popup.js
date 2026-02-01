@@ -1,10 +1,10 @@
 const letterGradeDefault = "F, D, C-, C, C+, B-, B, B+, A-, A, A+";
-const letterHeaderSearchDefault = "Percentage Grades";
+const letterHeaderSearchDefault = "Grade";
 const letterMatchWholeDefault = true;
 const numberGradeMinDefault = 0;
 const numberGradeMaxDefault = 100;
 const numberGradeResolutionDefault = 1;
-const numberHeaderSearchDefault = "Grade";
+const numberHeaderSearchDefault = "Percentage Grades";
 const numberMatchWholeDefault = false;
 
 //TODO: transfer array creating functionality to content script, maybe

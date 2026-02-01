@@ -1,5 +1,6 @@
 //TODO: custom table header search
 //add tooltips to settings
+//share defaults consts
 
 class Game{
 
@@ -54,9 +55,27 @@ class Game{
         table.dataset.mutated = "true";
     }
         
-    determineIndices(){
+    async determineIndices(){
         const headerGrid = [];
         const rows = this.tableHeader.rows;
+
+        const result = await chrome.storage.sync.get(["letterHeaderSearch", "letterMatchWhole", "numberHeaderSearch", "numberMatchWhole"]);
+
+        //check if strings are null/undefined/empty
+        //check if bools are null/undefined
+        if(!result.letterHeaderSearch || result.letterMatchWhole == null ||
+            !result.numberHeaderSearch || result.numberMatchWhole == null){
+            console.log(result.letterHeaderSearch);
+            console.log(result.letterMatchWhole);
+            console.log(result.numberHeaderSearch);
+            console.log(result.numberMatchWhole);
+            throw Error("Header settings invalid or couldn't load them");
+        }
+        
+        const letterHeaderSearch = result.letterHeaderSearch;
+        const letterMatchWhole = result.letterMatchWhole;
+        const numberHeaderSearch = result.numberHeaderSearch;
+        const numberMatchWhole = result.numberMatchWhole;
 
         for(let rowIndex = 0; rowIndex<rows.length; rowIndex++){
             const row = rows[rowIndex];
@@ -76,16 +95,25 @@ class Game{
                 label.querySelector('[data-testid="screenReader"]')?.remove();
                 const text = label.innerText.trim();
                 console.log(text);
-                if(text === "Grade"){
+
+                const isMatchLetter = letterMatchWhole ? text === letterHeaderSearch : text?.includes(letterHeaderSearch);
+                if(isMatchLetter){
                     if(this.letterGradeIndex || this.letterGradeIndex === 0){
                         throw Error("already found column index for letter grade, but found again");
                     }
                     this.letterGradeIndex = cellIndex;
-                }else if(text?.includes("Percentage Grades")){
+                }
+
+                const isMatchNumber = numberMatchWhole ? text === numberHeaderSearch : text?.includes(numberHeaderSearch);
+                if(isMatchNumber){
                     if(this.numberGradeIndex || this.numberGradeIndex === 0){
                         throw Error("already found column index for number grade, but found again");
                     }
                     this.numberGradeIndex = cellIndex;
+                }
+
+                if(isMatchLetter && isMatchNumber){
+                    console.log("Warning letter and number indices are the same");
                 }
 
                 //occupy the necessary amount of rows
@@ -114,6 +142,7 @@ class Game{
 
         const result = await chrome.storage.sync.get(["letterGradesArray", "numberGrades"]);
 
+        //Change this, make it a local variable instead of object field. Make defaults save on first download or find alternative
         if(result.letterGradesArray){
             Game.letterGrades = result.letterGradesArray;
         }
@@ -146,6 +175,8 @@ class Game{
         while(cell){
             let content = cell.textContent.trim();
             let grade = gradeArray.indexOf(content);
+            console.log(index);
+            console.log(gradeArray);
             console.log(content + ", " + grade);
 
             const originalContent = cell.innerHTML;
@@ -379,7 +410,7 @@ const observer = new MutationObserver(async (mutations) => {
                 const gradeTable = game.determineTableType();
                 if(gradeTable){
                     try{
-                        game.determineIndices();
+                        await game.determineIndices();
                         observer.disconnect(); //stop observing changes while we change or else infinite loop
                         await game.addButtons();
                         addObserverIfDesiredElementAvailable();
