@@ -30,9 +30,12 @@ export async function resetNumberSettingsToDefault(){
 
 export function processNumberGrades(min, max, resolution){
     let numberGrades = [];
-    console.log("Inputs:", {min, max, resolution});
     for(let i = min; i <= max; i += resolution){
-        numberGrades.push(i.toString());
+        //round num to resolution
+        //to precision gets rid of the imprecision of floating point arithmetic
+        //parsefloat to remove trailing 0s
+        const num = Number(parseFloat((Math.round(i/resolution) * resolution).toPrecision(12)));
+        numberGrades.push(num.toString());
     }
 
     return numberGrades;

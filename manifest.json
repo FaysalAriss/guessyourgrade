@@ -20,7 +20,8 @@
             "matches": [
                 "https://wd10.myworkday.com/*"
             ],
-            "css": ["game.css"]
+            "css": ["game.css"],
+            "type": "module"
         }
     ],
     "background": {

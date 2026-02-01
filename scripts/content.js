@@ -1,12 +1,22 @@
-//TODO: custom table header search
 //add tooltips to settings
-//share defaults consts
+//TODO: fix number grade checking. check the numbers instead of strings in case of 94.0 instead of 94
+//TODO: restructure code to have subgame arrays as fields of Game so they can all access the common resource of the grade arrays
+
+//copy pasted since import/export doesn't work for content script. and other solutions add too much clutter
+function processNumberGrades(min, max, resolution){
+    let numberGrades = [];
+    for(let i = min; i <= max; i += resolution){
+        //round num to resolution
+        //to precision gets rid of the imprecision of floating point arithmetic
+        //parsefloat to remove trailing 0s
+        const num = Number(parseFloat((Math.round(i/resolution) * resolution).toPrecision(12)));
+        numberGrades.push(num.toString());
+    }
+
+    return numberGrades;
+}
 
 class Game{
-
-    //important: sorted from low to high
-    static letterGrades = ['F', 'D', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+'];
-    static numberGrades = [];
     static guessButtonGeneralClass = "guess-button";
     static headerIndex = 0;
 
@@ -18,10 +28,6 @@ class Game{
         this.gradeTable = false;
         this.letterGradeIndex = null;
         this.numberGradeIndex = null;
-
-        for(var i = 0; i <= 100; i++){
-            Game.numberGrades.push(i.toString()); //number/letter are strings in the table cell
-        }
     }
 
     getTable(){
@@ -140,30 +146,30 @@ class Game{
     async addButtons(){
         console.log("Clearing grades and adding buttons");
 
-        const result = await chrome.storage.sync.get(["letterGradesArray", "numberGrades"]);
+        const result = await chrome.storage.sync.get(["letterGradesArray", "numberGradesArray"]);
 
-        //Change this, make it a local variable instead of object field. Make defaults save on first download or find alternative
-        if(result.letterGradesArray){
-            Game.letterGrades = result.letterGradesArray;
-        }
-        if(result.numberGrades){
-            Game.numberGrades = result.numberGrades;
+        if(!result.letterGradesArray || result.letterGradesArray.length === 0){
+            console.log(result.letterGradesArray);
+            throw Error("Letter grade settings are invalid or couldn't load them"); 
         }
 
-        if(!Game.letterGrades || !Game.numberGrades ||
-        Game.letterGrades.length === 0 || Game.numberGrades.length === 0){
-            console.log(Game.letterGrades);
-            console.log(Game.numberGrades);
-            throw Error("Settings are invalid or couldn't load them (letter/number grade ranges)"); 
-        }
+        if(!result.numberGradesArray || result.numberGradesArray.length === 0){
+            const rawData = await chrome.storage.sync.get(["numberGradeMin", "numberGradeMax", "numberGradeResolution"]);
 
-        if(this.letterGradeIndex){
-            this.addButtonsToColumn(this.letterGradeIndex, Game.letterGrades, "letter", 0);
-        }
-        if(this.numberGradeIndex){
-            this.addButtonsToColumn(this.numberGradeIndex, Game.numberGrades, "number", 49);
-        }
+            if(typeof rawData.numberGradeMin === 'undefined' ||
+                typeof rawData.numberGradeMax === 'undefined' ||
+                typeof rawData.numberGradeResolution === 'undefined'
+            ){
+                throw Error("Number grade min, max or resolution undefined");
+            }
+
+            if(this.numberGradeIndex){ this.addButtonsToColumn(this.numberGradeIndex, processNumberGrades(rawData.numberGradeMin, rawData.numberGradeMax, rawData.numberGradeResolution), "number", 49); }
+
+        }else{
+            if(this.numberGradeIndex){ this.addButtonsToColumn(this.numberGradeIndex, result.numberGradesArray, "number", 49); }
+        }    
         
+        if(this.letterGradeIndex){ this.addButtonsToColumn(this.letterGradeIndex, result.letterGradesArray, "letter", 0);}
     }
 
     addButtonsToColumn(index, gradeArray, idPrefix, startingGuess){
