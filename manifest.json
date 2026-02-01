@@ -22,6 +22,10 @@
             ],
             "css": ["game.css"]
         }
-    ]
+    ],
+    "background": {
+        "service_worker": "scripts/background.js",
+        "type": "module"
+    }
     
 }
