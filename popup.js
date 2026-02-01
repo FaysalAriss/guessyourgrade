@@ -1,13 +1,6 @@
-const letterGradeDefault = "F, D, C-, C, C+, B-, B, B+, A-, A, A+";
-const letterHeaderSearchDefault = "Grade";
-const letterMatchWholeDefault = true;
-const numberGradeMinDefault = 0;
-const numberGradeMaxDefault = 100;
-const numberGradeResolutionDefault = 1;
-const numberHeaderSearchDefault = "Percentage Grades";
-const numberMatchWholeDefault = false;
-
-//TODO: transfer array creating functionality to content script, maybe
+import { DEFAULT_LETTER_SETTINGS, DEFAULT_NUMBER_SETTINGS, 
+        processLetterGrades, resetLetterSettingsToDefault, 
+        processNumberGrades, resetNumberSettingsToDefault } from './scripts/default.js';
 
 class IllegalArgumentError extends Error{
     constructor(message){
@@ -50,23 +43,22 @@ async function handleButtonClick(button, action){
 }
 
 async function resetLetterGrade(){
-    document.getElementById("letter-grade-input").value = letterGradeDefault;
-    document.getElementById("letter-grade-header").value = letterHeaderSearchDefault;
-    document.getElementById("letter-grade-checkbox").checked = letterMatchWholeDefault;
-
-    await saveLetterGrade();
+    await resetLetterSettingsToDefault();
+    restoreOptions();
+    
     console.log("Reset and save complete");
 }
 
 async function saveLetterGrade(){
     const letterGrades = document.getElementById("letter-grade-input").value;
-    const letterGradesArray = letterGrades.split(",").map(item => item.trim()).filter(item => item || item === 0);
     const letterHeaderSearch = document.getElementById("letter-grade-header").value;
     const letterMatchWhole = document.getElementById("letter-grade-checkbox").checked;
     
     if(!letterGrades || !letterHeaderSearch){
         throw new IllegalArgumentError("Error: empty field");
     }
+
+    const letterGradesArray = processLetterGrades(letterGrades);
 
     await chrome.storage.sync.set({
         letterGrades: letterGrades, 
@@ -77,13 +69,8 @@ async function saveLetterGrade(){
 }
 
 async function resetNumberGrade(){
-    document.getElementById("number-grade-minimum").value = numberGradeMinDefault;
-    document.getElementById("number-grade-maximum").value = numberGradeMaxDefault;
-    document.getElementById("number-grade-resolution").value = numberGradeResolutionDefault;
-    document.getElementById("number-grade-header").value = numberHeaderSearchDefault;
-    document.getElementById("number-grade-checkbox").checked = numberMatchWholeDefault;
-
-    await saveNumberGrade();
+    await resetNumberSettingsToDefault();
+    restoreOptions();
     console.log("Reset and save complete");
 }
 
@@ -102,32 +89,49 @@ async function saveNumberGrade(){
         throw new IllegalArgumentError("Error: empty field");
     }
 
-    let numberGrades = [];
-    for(let i = numberGradeMin; i <= numberGradeMax; i += numberGradeResolution){
-        numberGrades.push(i.toString());
-    }
+    let numberGrades = processNumberGrades(numberGradeMin, numberGradeMax, numberGradeResolution);
 
-    await chrome.storage.sync.set({
-        numberGradeMin: numberGradeMin, 
-        numberGradeMax: numberGradeMax, 
-        numberGradeResolution: numberGradeResolution, 
-        numberGrades: numberGrades, 
-        numberHeaderSearch: numberHeaderSearch, 
-        numberMatchWhole: numberMatchWhole
-    });
+    //save without array if it's too large, process in content script instead
+    try{
+        await chrome.storage.sync.set({
+            numberGradeMin: numberGradeMin, 
+            numberGradeMax: numberGradeMax, 
+            numberGradeResolution: numberGradeResolution, 
+            numberGradesArray: numberGrades, 
+            numberHeaderSearch: numberHeaderSearch, 
+            numberMatchWhole: numberMatchWhole
+        });
+
+        if(chrome.runtime.lastError){throw new Error(chrome.runtime.lastError.message);}
+
+    }catch(error){
+        if(error.message.includes("quota exceeded")){
+            console.warn("Storage quota exceeded. Falling back to raw settings only.")
+            await chrome.storage.sync.set({
+                numberGradeMin: numberGradeMin, 
+                numberGradeMax: numberGradeMax, 
+                numberGradeResolution: numberGradeResolution, 
+                numberGradesArray: [], 
+                numberHeaderSearch: numberHeaderSearch, 
+                numberMatchWhole: numberMatchWhole
+            });
+        }else{
+            throw new Error(error.message);
+        }
+    }
 }
 
 // Restores select box and checkbox state using the preferences
 const restoreOptions = () => {
   chrome.storage.sync.get({
-        letterGrades: letterGradeDefault,
-        letterHeaderSearch: letterHeaderSearchDefault,
-        letterMatchWhole: letterMatchWholeDefault,
-        numberGradeMin: numberGradeMinDefault, 
-        numberGradeMax: numberGradeMaxDefault, 
-        numberGradeResolution: numberGradeResolutionDefault,
-        numberHeaderSearch: numberHeaderSearchDefault,
-        numberMatchWhole: numberMatchWholeDefault
+        letterGrades: DEFAULT_LETTER_SETTINGS.letterGrade,
+        letterHeaderSearch: DEFAULT_LETTER_SETTINGS.letterHeaderSearch,
+        letterMatchWhole: DEFAULT_LETTER_SETTINGS.letterMatchWhole,
+        numberGradeMin: DEFAULT_NUMBER_SETTINGS.numberGradeMin, 
+        numberGradeMax: DEFAULT_NUMBER_SETTINGS.numberGradeMax, 
+        numberGradeResolution: DEFAULT_NUMBER_SETTINGS.numberGradeResolution,
+        numberHeaderSearch: DEFAULT_NUMBER_SETTINGS.numberHeaderSearch,
+        numberMatchWhole: DEFAULT_NUMBER_SETTINGS.numberMatchWhole
     }, (items) => {
         document.getElementById('letter-grade-input').value = items.letterGrades;
         document.getElementById("letter-grade-header").value = items.letterHeaderSearch;
