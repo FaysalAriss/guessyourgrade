@@ -10,16 +10,32 @@
             <legend>Letter grades:</legend>
 
             <div>
-                <label class="label">Possible grades from lowest to highest, seperated by a comma:</label>
+                <div class="label tooltip">
+                    Possible grades (ascending)
+                    <p class="tooltiptext pos-bottom">All the possible grades, sorted from lowest to highest. Seperated by a comma.</p>
+                </div>
+                <br>
                 <input type="text" id="letter-grade-input" placeholder="F, D, C-, C, C+, B-, B, B+, A-, A, A+", value="F, D, C-, C, C+, B-, B, B+, A-, A, A+">
             </div>
             <br>
-            <label class="label">Header title:</label>
-            <div class="row">
-                <input type="text" id="letter-grade-header" placeholder="Percentage Grades" value="Percentage Grades">
+            <div class="label tooltip">
+                Header title:
+                <p class="tooltiptext pos-bottom">
+                    <img class="tooltipimage" src="/images/tooltips/letterHeaderTooltip.png"></img>
+                    The text to search for in the header, to find the column with the letter grades
+                </p>
+            </div>
+            
+            <div class="col">
+                <input type="text" id="letter-grade-header" placeholder="Grade" value="Grade">
                 <div class="checkbox-input">
-                    <input type="checkbox" id="letter-grade-checkbox" checked>
-                    <label class="label">Match whole word</label>
+                    <input type="checkbox" id="letter-grade-checkbox">
+                    <div class="label tooltip">
+                        Match whole word
+                        <p class="tooltiptext">
+                            Header must match input text completely or only partially
+                        </p>
+                    </div>
                 </div>
             </div>
             <br>
@@ -33,27 +49,48 @@
             <legend>Number grades:</legend>
             <div class="row">
                 <div class="label-input">
-                    <label class="label">Minimum:</label>
+                    <div class="label tooltip">
+                        Minimum:
+                        <p class="tooltiptext">The minimum number grade you can receive</p>
+                    </div>
                     <input id="number-grade-minimum" type="number" placeholder="minimum grade" value="0">
                 </div>
                 <div class="label-input">
-                    <label class="label">Maximum:</label>
+                    <div class="label tooltip">
+                        Maximum:
+                        <p class="tooltiptext">The maximum number grade you can receive</p>
+                    </div>
                     <input id="number-grade-maximum" type="number" placeholder="maximum grade" value="100">
                 </div>
                 <div class="label-input">
-                    <label class="label">Resolution:</label>
+                    <div class="label tooltip">
+                        Resolution:
+                        <p class="tooltiptext pos-left">The smallest increment between two grades. Ex: 58.8, 58.9, 59.0 have a resolution of 0.1</p>
+                    </div>
                     <input id="number-grade-resolution" type="number" placeholder="resolution" value="1">
                 </div>
             </div>
             <br>
-            <label class="label">Header title:</label>
-            <div class="row">
-                <input type="text" id="number-grade-header" placeholder="Grade" value="Grade">
+            <div class="label tooltip">
+                Header title:
+                <p class="tooltiptext pos-top">
+                    <img class="tooltipimage" src="/images/tooltips/numberHeaderTooltip.png"></img>
+                    The text to search for in the header, to find the column with the letter grades
+                </p>
+            </div>
+            <div class="col">
+                <input type="text" id="number-grade-header" placeholder="Percentage Grades" value="Percentage Grades">
                 <div class="checkbox-input">
-                    <input type="checkbox" id="number-grade-checkbox">
-                    <label class="label">Match whole word</label>
+                    <input type="checkbox" id="number-grade-checkbox" checked>
+                    <div class="label tooltip">
+                        Match whole word
+                        <p class="tooltiptext pos-top">
+                            Header must match input text completely or only partially
+                        </p>
+                    </div>
                 </div> 
             </div>
+
             <br>
             <div>
                 <button id="number-grade-reset">Reset</button>
