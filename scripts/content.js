@@ -1,4 +1,3 @@
-//add tooltips to settings
 //TODO: fix number grade checking. check the numbers instead of strings in case of 94.0 instead of 94
 //TODO: restructure code to have subgame arrays as fields of Game so they can all access the common resource of the grade arrays
 
@@ -16,32 +15,50 @@ function processNumberGrades(min, max, resolution){
     return numberGrades;
 }
 
-class Game{
+/**
+ * Sets up and begins the game for a table
+ */
+class GameMaster{
     static guessButtonGeneralClass = "guess-button";
-    static headerIndex = 0;
 
     tableHeader;
     
     constructor(table){
         this.table = table;
-        this.rows = [];
-        this.gradeTable = false;
-        this.letterGradeIndex = null;
-        this.numberGradeIndex = null;
+    }
+
+    async start(){
+        //skip tables without any columns with grades
+        if(!this.isGradeTable()){ return; }
+
+        //begin game
+        try{
+            await this.determineIndices();
+            await this.addButtons();
+        }catch(e){
+            console.warn("Error occured: "+ e);
+            const errorText = document.createElement("h1");
+            errorText.classList.add("error-text");
+            errorText.textContent = "Error occured. Hiding table to not reveal anything. " + e;
+            this.table.append(errorText);
+        }
     }
 
     getTable(){
         return this.table;
     }
 
+    //TODO: implemented custom header search here
     /**
      * Non mutator
      * 
      * @returns if the table is a table containing grades (viable to play the game)
      */
-    determineTableType(){
-
+    isGradeTable(){
         this.tableHeader = this.table.querySelector("thead");
+        console.log(this.table);
+        console.log(this.tableHeader);
+        console.log(this.table.querySelector("thead"));
         for(const row of this.tableHeader.rows){
             for(const cell of row.cells){
                 if(cell.textContent.includes("Grade") || cell.textContent.includes("Percentage")){
@@ -53,12 +70,6 @@ class Game{
         console.log("Grade table: " + this.gradeTable);
 
         return this.gradeTable;
-    }
-
-    static markTable(table){
-        //tag table as mutated so we don't touch it again
-        console.log("Marking as touched");
-        table.dataset.mutated = "true";
     }
         
     async determineIndices(){
@@ -119,7 +130,7 @@ class Game{
                 }
 
                 if(isMatchLetter && isMatchNumber){
-                    console.log("Warning letter and number indices are the same");
+                    console.warn("Letter and number indices are the same");
                 }
 
                 //occupy the necessary amount of rows
@@ -134,7 +145,7 @@ class Game{
             }
         }
 
-        //if grade table but can't find the grades abort without reshowing the table to avoid exposing the grades
+        //if is a grade table but can't find the grades abort without reshowing the table to avoid exposing the grades
         if(this.letterGradeIndex == null && this.numberGradeIndex == null){
             throw new Error("Couldn't identify indices of needed columns");
         }
@@ -190,11 +201,12 @@ class Game{
             if(content){
                 if(grade == -1){
                     //non empty cell and not in the grade list
-                    cell.textContent = "Error, grade not in possible grades";
+                    cell.textContent = "Grade not in possible grades";
+                    //TODO: add show anyway button?
                 }else{
                     //clear cell contents
                     cell.textContent = "";
-                    const subGame = new SubGame(cell, grade, originalContent, idPrefix+rowIndex, gradeArray, startingGuess);
+                    const subGame = new GameManager(cell, grade, originalContent, idPrefix+rowIndex, gradeArray, startingGuess);
                     subGame.startGame();
                 }
             }
@@ -205,17 +217,22 @@ class Game{
                 cell = cell.cells[index];
             }
         }
-    }    
+    }
+
+
 }
 
-class SubGame{
+/**
+ * Injects and manages the game into a column
+ */
+class GameManager{
     static defaultWaitingTime = 1000;
-    lowest;
-    highest;
+    // lowest;
+    // highest;
 
-    guessText;
-    gameWrapper;
-    canvas;
+    // guessText;
+    // gameWrapper;
+    // canvas;
 
     constructor (cell, grade, originalContent, id, gradeArray, startingGuess){
         this.cell = cell;
@@ -224,7 +241,7 @@ class SubGame{
         this.low = 0;
         this.high = gradeArray.length;
         this.firstGuess = true;
-        this.waitingTime = SubGame.defaultWaitingTime;
+        this.waitingTime = GameManager.defaultWaitingTime;
         this.originalContent = originalContent;
         this.id = id;
         this.gradeArray = gradeArray;
@@ -235,7 +252,7 @@ class SubGame{
     static createGuessButton(className, text){
         const button = document.createElement("button");
         button.textContent = text;
-        button.classList.add(Game.guessButtonGeneralClass, Game.guessButtonGeneralClass + "-" + className);
+        button.classList.add(GameMaster.guessButtonGeneralClass, GameMaster.guessButtonGeneralClass + "-" + className);
 
         return button;
     }
@@ -269,9 +286,9 @@ class SubGame{
         this.guessText.classList.add("checkmark");
     
         //confetti
-        SubGame.confetti(this.canvas);
+        GameManager.confetti(this.canvas);
 
-        this.waitingTime = 2*SubGame.defaultWaitingTime;
+        this.waitingTime = 2*GameManager.defaultWaitingTime;
     }
 
     updateGuess(){
@@ -285,7 +302,7 @@ class SubGame{
             this.resetTags();
             this.guessText.textContent = this.gradeArray[this.currentGuess];
         }, this.waitingTime);
-        this.waitingTime = SubGame.defaultWaitingTime;
+        this.waitingTime = GameManager.defaultWaitingTime;
     }
 
     resetTags(){
@@ -321,9 +338,9 @@ class SubGame{
         this.guessText.classList.add("guess-text");
         this.guessText.textContent = this.gradeArray[this.currentGuess];
 
-        const buttonHigher = SubGame.createGuessButton("higher", "Higher");
-        const buttonMiddle = SubGame.createGuessButton("middle", "This");
-        const buttonLower = SubGame.createGuessButton("lower", "Lower");
+        const buttonHigher = GameManager.createGuessButton("higher", "Higher");
+        const buttonMiddle = GameManager.createGuessButton("middle", "This");
+        const buttonLower = GameManager.createGuessButton("lower", "Lower");
 
         buttonHigher.addEventListener("click", (event) => {
             event.stopPropagation();
@@ -392,53 +409,50 @@ class SubGame{
     }
 }
 
+class NumberGameManager extends GameManager{
+
+}
+
+class LetterGameManager extends GameManager{
+
+}
+
+/**
+ * The game running in a specific cell.
+ * Used to store original info of the cell
+ */
+class Game{
+
+}
+
 //check if there's a table after we've navigated the page
 const observer = new MutationObserver(async (mutations) => {
-
     console.log("Page mutated, checking for table");
     let tables = document.querySelectorAll('[data-testid="table"]');
 
     for(const table of tables){
-        if(table){
-            console.log("Table found")
-            if(table.dataset.mutated == "true"){
-                console.log("Table already mutated, skipping")
-            }else{
-                console.log("Fresh table, attempting to fetch grades")
-                console.log(table);
-                Game.markTable(table);
-                //save copy
-                const tableCopy = table.cloneNode(true);
-                //hide table
-                console.log("Hiding table")
-                table.textContent = "";
-                const game = new Game(tableCopy);
-                const gradeTable = game.determineTableType();
-                if(gradeTable){
-                    try{
-                        await game.determineIndices();
-                        observer.disconnect(); //stop observing changes while we change or else infinite loop
-                        await game.addButtons();
-                        addObserverIfDesiredElementAvailable();
-                        console.log("Displaying game table");
-                        table.replaceWith(game.getTable());
-                        console.log(game.getTable());
-                    }catch(e){
-                        console.log("Error occured: "+ e);
-                        const errorText = document.createElement("h1");
-                        errorText.classList.add("error-text");
-                        errorText.textContent = "Error occured. Hiding table to not reveal anything. " + e;
-                        observer.disconnect();
-                        table.append(errorText);
-                        addObserverIfDesiredElementAvailable();
-                    }
-                }else{
-                    console.log("Displaying original table");
-                    table.replaceWith(tableCopy);
-                }
-                
-            }
+        if(!table){ return; }
+
+        console.log("Table found");
+        console.log(table);
+
+        if(table.dataset.mutated == "true"){
+            console.log("Table already mutated, skipping");
+            return;
         }
+
+        //tag table as mutated so we don't touch it again
+        console.log("Marking as touched");
+        table.dataset.mutated = "true";
+        const tableCopy = table.cloneNode(true);
+
+        console.log("Hiding table")
+        table.textContent = "";
+
+        console.log("Table found, attempting to begin game");
+        const game = new GameMaster(tableCopy);
+        await game.start();
+        table.replaceWith(game.getTable()); //doesn't seem to activate observer?
     }
 })
 
