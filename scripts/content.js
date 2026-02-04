@@ -22,12 +22,15 @@ class GameMaster{
     static guessButtonGeneralClass = "guess-button";
 
     tableHeader;
+    numberSearch;
+    letterSearch;
     
     constructor(table){
         this.table = table;
     }
 
     async start(){
+        await this.initializeSearch();
         //skip tables without any columns with grades
         if(!this.isGradeTable()){ return; }
 
@@ -48,7 +51,21 @@ class GameMaster{
         return this.table;
     }
 
-    //TODO: implemented custom header search here
+    async initializeSearch(){
+        const result = await chrome.storage.sync.get(["letterHeaderSearch", "letterMatchWhole", "numberHeaderSearch", "numberMatchWhole"]);
+
+        //check if strings are null/undefined/empty
+        //check if bools are null/undefined
+        if(!result.letterHeaderSearch || result.letterMatchWhole == null ||
+            !result.numberHeaderSearch || result.numberMatchWhole == null){
+            console.log(result);
+            throw Error("Header settings invalid or couldn't load them");
+        }
+
+        this.letterSearch = new Search(result.letterHeaderSearch, result.letterMatchWhole);
+        this.numberSearch = new Search(result.numberHeaderSearch, result.numberMatchWhole);
+    }
+
     /**
      * Non mutator
      * 
@@ -56,43 +73,22 @@ class GameMaster{
      */
     isGradeTable(){
         this.tableHeader = this.table.querySelector("thead");
-        console.log(this.table);
-        console.log(this.tableHeader);
-        console.log(this.table.querySelector("thead"));
+
         for(const row of this.tableHeader.rows){
             for(const cell of row.cells){
-                if(cell.textContent.includes("Grade") || cell.textContent.includes("Percentage")){
-                    this.gradeTable = true;
+                if(this.letterSearch.search(cell.textContent) || this.numberSearch.search(cell.textContent)){
+                    console.log("Grade table: true");
+                    return true;
                 }
             }
         }
 
-        console.log("Grade table: " + this.gradeTable);
-
-        return this.gradeTable;
+        console.log("Grade table: false");
     }
         
     async determineIndices(){
         const headerGrid = [];
         const rows = this.tableHeader.rows;
-
-        const result = await chrome.storage.sync.get(["letterHeaderSearch", "letterMatchWhole", "numberHeaderSearch", "numberMatchWhole"]);
-
-        //check if strings are null/undefined/empty
-        //check if bools are null/undefined
-        if(!result.letterHeaderSearch || result.letterMatchWhole == null ||
-            !result.numberHeaderSearch || result.numberMatchWhole == null){
-            console.log(result.letterHeaderSearch);
-            console.log(result.letterMatchWhole);
-            console.log(result.numberHeaderSearch);
-            console.log(result.numberMatchWhole);
-            throw Error("Header settings invalid or couldn't load them");
-        }
-        
-        const letterHeaderSearch = result.letterHeaderSearch;
-        const letterMatchWhole = result.letterMatchWhole;
-        const numberHeaderSearch = result.numberHeaderSearch;
-        const numberMatchWhole = result.numberMatchWhole;
 
         for(let rowIndex = 0; rowIndex<rows.length; rowIndex++){
             const row = rows[rowIndex];
@@ -113,7 +109,7 @@ class GameMaster{
                 const text = label.innerText.trim();
                 console.log(text);
 
-                const isMatchLetter = letterMatchWhole ? text === letterHeaderSearch : text?.includes(letterHeaderSearch);
+                const isMatchLetter = this.letterSearch.search(text);
                 if(isMatchLetter){
                     if(this.letterGradeIndex || this.letterGradeIndex === 0){
                         throw Error("already found column index for letter grade, but found again");
@@ -121,7 +117,7 @@ class GameMaster{
                     this.letterGradeIndex = cellIndex;
                 }
 
-                const isMatchNumber = numberMatchWhole ? text === numberHeaderSearch : text?.includes(numberHeaderSearch);
+                const isMatchNumber = this.numberSearch.search(text);
                 if(isMatchNumber){
                     if(this.numberGradeIndex || this.numberGradeIndex === 0){
                         throw Error("already found column index for number grade, but found again");
@@ -220,6 +216,22 @@ class GameMaster{
     }
 
 
+}
+
+class Search{
+    /**
+     * 
+     * @param {string} toFind, text to find
+     * @param {boolean} matchWhole if need to match the entire string
+     */
+    constructor(toFind, matchWhole){
+        this.toFind = toFind;
+        this.matchWhole = matchWhole;
+    }
+
+    search(input){
+        return this.matchWhole ? input === this.toFind : input?.includes(this.toFind);
+    }
 }
 
 /**
