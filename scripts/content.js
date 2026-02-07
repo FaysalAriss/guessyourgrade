@@ -78,7 +78,10 @@ class GameMaster{
     isGradeTable(){
         for(const row of this.tableHeader.rows){
             for(const cell of row.cells){
-                if(this.letterSearch.search(cell.textContent) || this.numberSearch.search(cell.textContent)){
+                const label = cell.cloneNode(true);
+                label.querySelector('[data-testid="screenReader"]')?.remove();
+                const text = label.innerText.trim();
+                if(this.letterSearch.search(text) || this.numberSearch.search(text)){
                     console.log("Grade table: true");
                     return true;
                 }
