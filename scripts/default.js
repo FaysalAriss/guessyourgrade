@@ -35,7 +35,7 @@ export function processNumberGrades(min, max, resolution){
         //to precision gets rid of the imprecision of floating point arithmetic
         //parsefloat to remove trailing 0s
         const num = Number(parseFloat((Math.round(i/resolution) * resolution).toPrecision(12)));
-        numberGrades.push(num.toString());
+        numberGrades.push(num);
     }
 
     return numberGrades;

@@ -6,4 +6,6 @@ chrome.runtime.onInstalled.addListener(async (details) => {
         await resetNumberSettingsToDefault();
         console.log("Initial setup complete");
     }
+
+    //TODO: on update remake grade arrays?
 });

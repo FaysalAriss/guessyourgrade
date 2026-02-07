@@ -1,5 +1,6 @@
-//TODO: fix number grade checking. check the numbers instead of strings in case of 94.0 instead of 94
-//TODO: restructure code to have subgame arrays as fields of Game so they can all access the common resource of the grade arrays
+//TODO: fix on pass logic. can it be made more flexible or just keep it on first guess?
+//TODO: add +- buttons for guessing
+//TODO: load settings once for whole page instead of table? probably not worth the effort
 
 //copy pasted since import/export doesn't work for content script. and other solutions add too much clutter
 function processNumberGrades(min, max, resolution){
@@ -9,7 +10,7 @@ function processNumberGrades(min, max, resolution){
         //to precision gets rid of the imprecision of floating point arithmetic
         //parsefloat to remove trailing 0s
         const num = Number(parseFloat((Math.round(i/resolution) * resolution).toPrecision(12)));
-        numberGrades.push(num.toString());
+        numberGrades.push(num);
     }
 
     return numberGrades;
@@ -19,14 +20,15 @@ function processNumberGrades(min, max, resolution){
  * Sets up and begins the game for a table
  */
 class GameMaster{
-    static guessButtonGeneralClass = "guess-button";
-
-    tableHeader;
     numberSearch;
     letterSearch;
+
+    letterGradesArray;
+    numberGradesArray;
     
     constructor(table){
         this.table = table;
+        this.tableHeader = this.table.querySelector("thead");
     }
 
     async start(){
@@ -36,10 +38,12 @@ class GameMaster{
 
         //begin game
         try{
-            await this.determineIndices();
-            await this.addButtons();
+            this.determineIndices();
+            await this.initializeGradeArrays();
+            this.addButtons();
         }catch(e){
             console.warn("Error occured: "+ e);
+            this.table.textContent = "";
             const errorText = document.createElement("h1");
             errorText.classList.add("error-text");
             errorText.textContent = "Error occured. Hiding table to not reveal anything. " + e;
@@ -72,8 +76,6 @@ class GameMaster{
      * @returns if the table is a table containing grades (viable to play the game)
      */
     isGradeTable(){
-        this.tableHeader = this.table.querySelector("thead");
-
         for(const row of this.tableHeader.rows){
             for(const cell of row.cells){
                 if(this.letterSearch.search(cell.textContent) || this.numberSearch.search(cell.textContent)){
@@ -84,9 +86,10 @@ class GameMaster{
         }
 
         console.log("Grade table: false");
+        return false;
     }
         
-    async determineIndices(){
+    determineIndices(){
         const headerGrid = [];
         const rows = this.tableHeader.rows;
 
@@ -149,16 +152,15 @@ class GameMaster{
         console.log("Letter and number grades column indices: " + this.letterGradeIndex + ", " + this.numberGradeIndex);
     }
 
-        
-    async addButtons(){
-        console.log("Clearing grades and adding buttons");
-
+    async initializeGradeArrays(){
         const result = await chrome.storage.sync.get(["letterGradesArray", "numberGradesArray"]);
 
         if(!result.letterGradesArray || result.letterGradesArray.length === 0){
             console.log(result.letterGradesArray);
             throw Error("Letter grade settings are invalid or couldn't load them"); 
         }
+
+        this.letterGradesArray = result.letterGradesArray;
 
         if(!result.numberGradesArray || result.numberGradesArray.length === 0){
             const rawData = await chrome.storage.sync.get(["numberGradeMin", "numberGradeMax", "numberGradeResolution"]);
@@ -170,51 +172,46 @@ class GameMaster{
                 throw Error("Number grade min, max or resolution undefined");
             }
 
-            if(this.numberGradeIndex){ this.addButtonsToColumn(this.numberGradeIndex, processNumberGrades(rawData.numberGradeMin, rawData.numberGradeMax, rawData.numberGradeResolution), "number", 49); }
+            const numberGradesArray = processNumberGrades(rawData.numberGradeMin, rawData.numberGradeMax, rawData.numberGradeResolution);
+            this.numberGradesArray = numberGradesArray;
 
         }else{
-            if(this.numberGradeIndex){ this.addButtonsToColumn(this.numberGradeIndex, result.numberGradesArray, "number", 49); }
+            this.numberGradesArray = result.numberGradesArray;
         }    
-        
-        if(this.letterGradeIndex){ this.addButtonsToColumn(this.letterGradeIndex, result.letterGradesArray, "letter", 0);}
     }
 
-    addButtonsToColumn(index, gradeArray, idPrefix, startingGuess){
-        //mask/remove grades
-        const tableBody = this.table.querySelector("tbody");
+        
+    async addButtons(){
+        console.log("Clearing grades and adding buttons");
 
-        let rowIndex = 0;
-        let cell = tableBody.rows[rowIndex].cells[index];
-        while(cell){
-            let content = cell.textContent.trim();
-            let grade = gradeArray.indexOf(content);
-            console.log(index);
-            console.log(gradeArray);
-            console.log(content + ", " + grade);
+        const numberConfig = {
+            parseCell: (cell) => Number(cell.textContent.trim()),
+            gradeArray: this.numberGradesArray,
+            startingGuess: Math.round((this.numberGradesArray.length-1)/2)
+        };
 
-            const originalContent = cell.innerHTML;
+        const letterConfig = {
+            parseCell: (cell) => cell.textContent.trim(),
+            gradeArray: this.letterGradesArray,
+            startingGuess: 0
+        };
 
-            if(content){
-                if(grade == -1){
-                    //non empty cell and not in the grade list
-                    cell.textContent = "Grade not in possible grades";
-                    //TODO: add show anyway button?
-                }else{
-                    //clear cell contents
-                    cell.textContent = "";
-                    const subGame = new GameManager(cell, grade, originalContent, idPrefix+rowIndex, gradeArray, startingGuess);
-                    subGame.startGame();
-                }
-            }
-
-            rowIndex++;
-            cell = tableBody.rows[rowIndex];
-            if(cell){
-                cell = cell.cells[index];
-            }
+        if(this.numberGradeIndex){
+            this.addButtonsToColumn(this.numberGradeIndex, numberConfig);
+        }
+        if(this.letterGradeIndex){
+            this.addButtonsToColumn(this.letterGradeIndex, letterConfig);
         }
     }
 
+    addButtonsToColumn(columnIndex, config){
+        const tableBody = this.table.querySelector("tbody");
+
+        for(const row of tableBody.rows){ 
+            const game = new Game(row.cells[columnIndex], config);
+            game.start();
+        }
+    }
 
 }
 
@@ -235,91 +232,140 @@ class Search{
 }
 
 /**
- * Injects and manages the game into a column
+ * The game running in a specific cell.
  */
-class GameManager{
-    static defaultWaitingTime = 1000;
-    // lowest;
-    // highest;
+class Game{
+    static RIGHT_CLASS = "checkmark";
+    static WRONG_CLASS = "cross";
 
-    // guessText;
-    // gameWrapper;
-    // canvas;
+    static defaultWaitingTime = 700; //milliseconds
+    static guessButtonGeneralClass = "guess-button";
 
-    constructor (cell, grade, originalContent, id, gradeArray, startingGuess){
+    constructor(cell, config){
         this.cell = cell;
-        this.grade = grade;
-        this.currentGuess = startingGuess;
+        this.config = config;
+
+        //setup
+        this.content = config.parseCell(this.cell);
+        this.solution = config.gradeArray.indexOf(this.content);
+        this.currentGuess = this.config.startingGuess;
+
+        this.originalContent = this.cell.innerHTML;
+
         this.low = 0;
-        this.high = gradeArray.length;
-        this.firstGuess = true;
-        this.waitingTime = GameManager.defaultWaitingTime;
-        this.originalContent = originalContent;
-        this.id = id;
-        this.gradeArray = gradeArray;
+        this.high = this.config.gradeArray.length;
         this.lowest = 0;
-        this.highest = gradeArray.length;
+        this.highest = this.config.gradeArray.length;
+        this.firstGuess = true;
+        this.waitingTime = Game.defaultWaitingTime;
     }
 
-    static createGuessButton(className, text){
-        const button = document.createElement("button");
-        button.textContent = text;
-        button.classList.add(GameMaster.guessButtonGeneralClass, GameMaster.guessButtonGeneralClass + "-" + className);
+    start(){
+        //empty cell
+        if(!this.content){ return; }
 
-        return button;
+        if(this.solution == -1){
+            this.cell.textContent = "Grade not in given list";
+            console.log(this.config.gradeArray);
+            console.log(this.content + ", " + this.solution);
+            //TODO: add show anyway button?
+            return;
+        }
+
+        //start game
+        this.cell.textContent = "";
+        this.addElements();
     }
 
-    /**
-     * Advance the high/low of the game
-     * 
-     * requires: currentguess != grade
-     */
-    advanceGame(){
-        if(this.currentGuess < this.grade){
-            this.low = this.currentGuess + 1;
+    addElements(){
+        //wrapper
+        const gameWrapper = document.createElement("div");
+        gameWrapper.classList.add("game-wrapper");
+
+        //canvas for confetti
+        this.canvas = document.createElement('canvas');
+        this.canvas.id = `confetti-${Math.random().toString(36).substring(2, 9)}`;
+        gameWrapper.appendChild(this.canvas);
+
+        //current guess text
+        this.guessText = document.createElement("h3");
+        this.guessText.classList.add("guess-text");
+        this.guessText.textContent = this.config.gradeArray[this.currentGuess];
+
+        //guess buttons
+        const buttonHigher = Game.createButton(Game.guessButtonGeneralClass, "higher", "Higher");
+        const buttonMiddle = Game.createButton(Game.guessButtonGeneralClass, "middle", "This");
+        const buttonLower = Game.createButton(Game.guessButtonGeneralClass, "lower", "Lower");
+
+        buttonHigher.addEventListener("click", (event) => this.onHigher(event));
+        buttonMiddle.addEventListener("click", (event) => this.onMiddle(event));
+        buttonLower.addEventListener("click", (event) => this.onLower(event));
+
+        gameWrapper.append(this.guessText, buttonHigher, buttonMiddle, buttonLower);
+        this.cell.append(gameWrapper);
+    }
+
+    onHigher(event){
+        event.stopPropagation();
+
+        this.advanceGame("high");
+
+        if(this.currentGuess < this.solution){
+            this.firstGuess ? this.pass() : this.right();
+            this.updateGuess();
         }else{
-            this.high = this.currentGuess - 1;
+            this.wrong();
         }
     }
 
-    right(){
-        this.guessText.textContent = "✓";
-        this.guessText.classList.add("checkmark");
+    onLower(event){
+        event.stopPropagation();
+
+        this.advanceGame("low");
+
+        if(this.currentGuess > this.solution){
+            this.right();
+            this.updateGuess();
+        }else{
+            this.firstGuess ? this.pass() : this.wrong();
+        }
     }
 
-    wrong(){
-        this.guessText.textContent = "✗";
-        this.guessText.classList.add("cross");
+    advanceGame(type){
+        if(this.currentGuess == this.solution){
+            this[type] = this.currentGuess;
+        }else{
+            if(this.currentGuess < this.solution){
+                this.low = this.currentGuess + 1;
+            }else{
+                this.high = this.currentGuess - 1;
+            }
+        }
+
+        this.updateText();
     }
 
-    pass(){
-        this.firstGuess = false;
-        this.guessText.textContent = "You passed!!";
-        this.guessText.classList.add("checkmark");
-    
-        //confetti
-        GameManager.confetti(this.canvas);
+    onMiddle(event){
+        event.stopPropagation();
 
-        this.waitingTime = 2*GameManager.defaultWaitingTime;
+        if(this.currentGuess == this.solution){
+            this.resetCell();
+        }else{
+            this.wrong();
+            this.updateText();
+        }
     }
 
-    updateGuess(){
-        //binary search for your grade
-        const newGuess = Math.round((this.high+this.low)/2);
-        this.currentGuess = Math.min(Math.max(newGuess, this.lowest), this.highest);
+    resetCell(){
+        this.cell.innerHTML = this.originalContent;
     }
 
-    updateText(){
-        setTimeout(() => {
-            this.resetTags();
-            this.guessText.textContent = this.gradeArray[this.currentGuess];
-        }, this.waitingTime);
-        this.waitingTime = GameManager.defaultWaitingTime;
-    }
+    static createButton(generalClassName, subClassName, text){
+        const button = document.createElement("button");
+        button.textContent = text;
+        button.classList.add(generalClassName, generalClassName + "-" + subClassName);
 
-    resetTags(){
-        this.guessText.classList.remove("checkmark");
-        this.guessText.classList.remove("cross");
+        return button;
     }
 
     static async confetti(canvas){
@@ -336,106 +382,50 @@ class GameManager{
             scalar: 0.6,
         });
     }
-    
-    startGame(){
-        this.gameWrapper = document.createElement("div");
-        this.gameWrapper.classList.add("game-wrapper");
-
-        this.canvas = document.createElement('canvas');
-        this.canvas.classList.add("canvas-confetti");
-        this.canvas.id = "confetti-" + this.id;
-        this.gameWrapper.appendChild(this.canvas);
-
-        this.guessText = document.createElement("h3");
-        this.guessText.classList.add("guess-text");
-        this.guessText.textContent = this.gradeArray[this.currentGuess];
-
-        const buttonHigher = GameManager.createGuessButton("higher", "Higher");
-        const buttonMiddle = GameManager.createGuessButton("middle", "This");
-        const buttonLower = GameManager.createGuessButton("lower", "Lower");
-
-        buttonHigher.addEventListener("click", (event) => {
-            event.stopPropagation();
-            console.log("Higher clicked");
-            if(this.currentGuess < this.grade){
-                if(this.firstGuess){
-                    this.pass();
-                }else{
-                    this.right();
-                }
-            }else{
-                this.wrong();
-            } 
-
-            if(this.currentGuess == this.grade){
-                this.high = this.currentGuess;
-            }else{
-                this.advanceGame();
-            }
-
-            this.updateGuess();
-            this.updateText();
-        });
-
-        buttonMiddle.addEventListener("click", (event) => {
-            event.stopPropagation();
-            console.log("Middle clicked");
-
-            if(this.currentGuess == this.grade){
-                console.log("won");
-                this.gameWrapper.parentElement.innerHTML = this.originalContent;
-                return;                
-            }else{
-                this.wrong();
-                this.updateText();
-            }
-        });
-
-        buttonLower.addEventListener("click", (event) => {
-            event.stopPropagation();
-            console.log("Lower clicked");
-            
-            if(this.currentGuess > this.grade){
-                this.right();
-            }else{
-                if(this.firstGuess){
-                    this.pass();
-                }else{
-                    this.wrong();
-                }
-            }
-
-            if(this.currentGuess == this.grade){
-                this.low = this.currentGuess;
-            }else{
-                this.advanceGame();
-            }
-
-            this.updateGuess();
-            this.updateText();
-        });
-        
-        this.gameWrapper.append(this.guessText, buttonHigher, buttonMiddle, buttonLower);
-        this.cell.append(this.gameWrapper);
-
+    right(){
+        this.guessText.textContent = "✓";
+        this.guessText.classList.add(Game.RIGHT_CLASS);
     }
+
+    wrong(){
+        this.guessText.textContent = "✗";
+        this.guessText.classList.add(Game.WRONG_CLASS);
+    }
+
+    pass(){
+        this.firstGuess = false;
+        this.guessText.textContent = "You passed!!";
+        this.guessText.classList.add(Game.RIGHT_CLASS);
+    
+        //confetti
+        Game.confetti(this.canvas);
+
+        this.waitingTime = 2*Game.defaultWaitingTime;
+    }
+
+    resetTags(){
+        this.guessText.classList.remove(Game.RIGHT_CLASS);
+        this.guessText.classList.remove(Game.WRONG_CLASS);
+    }
+
+    updateGuess(){
+        //binary search for your grade
+        const newGuess = Math.round((this.high+this.low)/2);
+        //currentGuess = new guess within bounds of lowest and highest
+        this.currentGuess = Math.min(Math.max(newGuess, this.lowest), this.highest);
+    }
+
+    updateText(){
+        setTimeout(() => {
+            this.resetTags();
+            this.guessText.textContent = this.config.gradeArray[this.currentGuess];
+        }, this.waitingTime);
+
+        this.waitingTime = Game.defaultWaitingTime;
+    }
+
 }
 
-class NumberGameManager extends GameManager{
-
-}
-
-class LetterGameManager extends GameManager{
-
-}
-
-/**
- * The game running in a specific cell.
- * Used to store original info of the cell
- */
-class Game{
-
-}
 
 //check if there's a table after we've navigated the page
 const observer = new MutationObserver(async (mutations) => {
