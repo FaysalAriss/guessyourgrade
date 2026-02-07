@@ -1,20 +1,22 @@
 export const DEFAULT_LETTER_SETTINGS = {
-    letterGrade : "F, D, C-, C, C+, B-, B, B+, A-, A, A+",
-    letterHeaderSearch : "Grade",
-    letterMatchWhole : true,
+    letterGrades: "F, D, C-, C, C+, B-, B, B+, A-, A, A+",
+    letterHeaderSearch: "Grade",
+    letterMatchWhole: true,
+    letterPassing: "F"
 }
 
 export const DEFAULT_NUMBER_SETTINGS = {
-    numberGradeMin : 0,
-    numberGradeMax : 100,
-    numberGradeResolution : 1,
-    numberHeaderSearch : "Percentage Grades",
-    numberMatchWhole : false
+    numberGradeMin: 0,
+    numberGradeMax: 100,
+    numberGradeResolution: 1,
+    numberHeaderSearch: "Percentage Grades",
+    numberMatchWhole: false,
+    numberPassing: 49
 }
 
 export async function resetLetterSettingsToDefault(){
     const settingsToSave = {... DEFAULT_LETTER_SETTINGS}; //make a copy for immutability
-    settingsToSave.letterGradesArray = processLetterGrades(settingsToSave.letterGrade); //add processed data
+    settingsToSave.letterGradesArray = processLetterGrades(settingsToSave.letterGrades); //add processed data
     return chrome.storage.sync.set(settingsToSave);
 }
 

@@ -2,6 +2,12 @@ input{
     field-sizing: content;
 }
 
+fieldset{
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .label-input{
     display: flex;
     flex-direction: column;

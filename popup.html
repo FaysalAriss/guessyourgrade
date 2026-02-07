@@ -9,36 +9,48 @@
         <fieldset>
             <legend>Letter grades:</legend>
 
-            <div>
+            <div class="col">
                 <div class="label tooltip">
                     Possible grades (ascending)
                     <p class="tooltiptext pos-bottom">All the possible grades, sorted from lowest to highest. Seperated by a comma.</p>
                 </div>
-                <br>
+                
                 <input type="text" id="letter-grade-input" placeholder="F, D, C-, C, C+, B-, B, B+, A-, A, A+", value="F, D, C-, C, C+, B-, B, B+, A-, A, A+">
             </div>
-            <br>
-            <div class="label tooltip">
-                Header title:
-                <p class="tooltiptext pos-bottom">
-                    <img class="tooltipimage" src="/images/tooltips/letterHeaderTooltip.png"></img>
-                    The text to search for in the header, to find the column with the letter grades
-                </p>
+
+
+            <div class="col">
+                <div class="label tooltip">
+                    Passing grade
+                    <p class="tooltiptext pos-bottom">The highest grade you can get without passing. Must be part of the possible grades</p>
+                </div>
+
+                <input type="text" id="letter-passing-input" placeholder="F", value="F">
             </div>
             
-            <div class="col">
-                <input type="text" id="letter-grade-header" placeholder="Grade" value="Grade">
-                <div class="checkbox-input">
-                    <input type="checkbox" id="letter-grade-checkbox">
-                    <div class="label tooltip">
-                        Match whole word
-                        <p class="tooltiptext">
-                            Header must match input text completely or only partially
-                        </p>
+            <div>
+                <div class="label tooltip">
+                    Header title:
+                    <p class="tooltiptext pos-right">
+                        <img class="tooltipimage" src="/images/tooltips/letterHeaderTooltip.png"></img>
+                        The text to search for in the header, to find the column with the letter grades
+                    </p>
+                </div>
+                
+                <div class="col">
+                    <input type="text" id="letter-grade-header" placeholder="Grade" value="Grade">
+                    <div class="checkbox-input">
+                        <input type="checkbox" id="letter-grade-checkbox">
+                        <div class="label tooltip">
+                            Match whole word
+                            <p class="tooltiptext">
+                                Header must match input text completely or only partially
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
-            <br>
+            
             <div>
                 <button id="letter-grade-reset">Reset</button>
                 <button id="letter-grade-save">Save</button>
@@ -70,28 +82,39 @@
                     <input id="number-grade-resolution" type="number" placeholder="resolution" value="1">
                 </div>
             </div>
-            <br>
-            <div class="label tooltip">
-                Header title:
-                <p class="tooltiptext pos-top">
-                    <img class="tooltipimage" src="/images/tooltips/numberHeaderTooltip.png"></img>
-                    The text to search for in the header, to find the column with the letter grades
-                </p>
-            </div>
+
             <div class="col">
-                <input type="text" id="number-grade-header" placeholder="Percentage Grades" value="Percentage Grades">
-                <div class="checkbox-input">
-                    <input type="checkbox" id="number-grade-checkbox" checked>
-                    <div class="label tooltip">
-                        Match whole word
-                        <p class="tooltiptext pos-top">
-                            Header must match input text completely or only partially
-                        </p>
-                    </div>
-                </div> 
+                <div class="label tooltip">
+                    Passing grade
+                    <p class="tooltiptext pos-bottom">The highest grade you can get without passing. Must be part of the possible grades</p>
+                </div>
+
+                <input type="text" id="number-passing-input" placeholder="49", value="49">
+            </div>
+            
+            <div>
+                <div class="label tooltip">
+                    Header title:
+                    <p class="tooltiptext pos-top">
+                        <img class="tooltipimage" src="/images/tooltips/numberHeaderTooltip.png"></img>
+                        The text to search for in the header, to find the column with the letter grades
+                    </p>
+                </div>
+                <div class="col">
+                    <input type="text" id="number-grade-header" placeholder="Percentage Grades" value="Percentage Grades">
+                    <div class="checkbox-input">
+                        <input type="checkbox" id="number-grade-checkbox" checked>
+                        <div class="label tooltip">
+                            Match whole word
+                            <p class="tooltiptext pos-top">
+                                Header must match input text completely or only partially
+                            </p>
+                        </div>
+                    </div> 
+                </div>
             </div>
 
-            <br>
+            
             <div>
                 <button id="number-grade-reset">Reset</button>
                 <button id="number-grade-save">Save</button>

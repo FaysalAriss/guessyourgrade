@@ -8,4 +8,5 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     }
 
     //TODO: on update remake grade arrays?
+    //TODO: delete and resave data in case what is saved changed and we are no longer using certain fields but they're still saved
 });

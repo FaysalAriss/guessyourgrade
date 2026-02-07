@@ -8,6 +8,15 @@
   position: relative;
 }
 
+.guess-div{
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: fill;
+  height: fill;
+  position: relative;
+}
+
 .guess-button{
   appearance: none;
   border: 1px solid rgba(27, 31, 35, .15);
@@ -33,15 +42,20 @@
   min-width: fit-content;
 }
 
-.guess-button-higher{
+.guess-button-plus, .guess-button-minus{
+  padding: 3px 9px;
+  border-radius: 5px;
+}
+
+.guess-button-higher, .guess-button-plus{
     background-color: #2ea44f;
 }
 
-.guess-button-higher:hover {
+.guess-button-higher:hover, .guess-button-plus:hover{
   background-color: #2c974b;
 }
 
-.guess-button-higher:active {
+.guess-button-higher:active, .guess-button-plus:active{
   background-color: #298e46;
   box-shadow: rgba(20, 70, 32, .2) 0 1px 0 inset;
 }
@@ -59,15 +73,15 @@
   box-shadow: rgba(20, 70, 32, .2) 0 1px 0 inset;
 }
 
-.guess-button-lower{
+.guess-button-lower, .guess-button-minus{
     background: #e0552eff;
 }
 
-.guess-button-lower:hover {
+.guess-button-lower:hover, .guess-button-minus:hover {
   background-color: rgb(211, 80, 44);
 }
 
-.guess-button-lower:active {
+.guess-button-lower:active, .guess-button-minus:active {
   background-color: rgb(200, 76, 42);
   box-shadow: rgba(20, 70, 32, .2) 0 1px 0 inset;
 }

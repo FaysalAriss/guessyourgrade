@@ -1,5 +1,3 @@
-//TODO: fix on pass logic. can it be made more flexible or just keep it on first guess?
-//TODO: add +- buttons for guessing
 //TODO: load settings once for whole page instead of table? probably not worth the effort
 
 //copy pasted since import/export doesn't work for content script. and other solutions add too much clutter
@@ -24,7 +22,9 @@ class GameMaster{
     letterSearch;
 
     letterGradesArray;
+    letterPassingIndex;
     numberGradesArray;
+    numberPassingIndex;
     
     constructor(table){
         this.table = table;
@@ -153,7 +153,7 @@ class GameMaster{
     }
 
     async initializeGradeArrays(){
-        const result = await chrome.storage.sync.get(["letterGradesArray", "numberGradesArray"]);
+        const result = await chrome.storage.sync.get(["letterGradesArray", "letterPassing", "numberGradesArray", "numberPassing"]);
 
         if(!result.letterGradesArray || result.letterGradesArray.length === 0){
             console.log(result.letterGradesArray);
@@ -161,6 +161,7 @@ class GameMaster{
         }
 
         this.letterGradesArray = result.letterGradesArray;
+        this.letterPassingIndex = this.letterGradesArray.indexOf(result.letterPassing);
 
         if(!result.numberGradesArray || result.numberGradesArray.length === 0){
             const rawData = await chrome.storage.sync.get(["numberGradeMin", "numberGradeMax", "numberGradeResolution"]);
@@ -177,7 +178,9 @@ class GameMaster{
 
         }else{
             this.numberGradesArray = result.numberGradesArray;
-        }    
+        }
+
+        this.numberPassingIndex = this.numberGradesArray.indexOf(result.numberPassing);
     }
 
         
@@ -187,13 +190,13 @@ class GameMaster{
         const numberConfig = {
             parseCell: (cell) => Number(cell.textContent.trim()),
             gradeArray: this.numberGradesArray,
-            startingGuess: Math.round((this.numberGradesArray.length-1)/2)
+            passingIndex: this.numberPassingIndex
         };
 
         const letterConfig = {
             parseCell: (cell) => cell.textContent.trim(),
             gradeArray: this.letterGradesArray,
-            startingGuess: 0
+            passingIndex: this.letterPassingIndex
         };
 
         if(this.numberGradeIndex){
@@ -248,7 +251,8 @@ class Game{
         //setup
         this.content = config.parseCell(this.cell);
         this.solution = config.gradeArray.indexOf(this.content);
-        this.currentGuess = this.config.startingGuess;
+        this.currentGuess = this.config.passingIndex;
+        this.passingIndex = this.config.passingIndex;
 
         this.originalContent = this.cell.innerHTML;
 
@@ -256,7 +260,7 @@ class Game{
         this.high = this.config.gradeArray.length;
         this.lowest = 0;
         this.highest = this.config.gradeArray.length;
-        this.firstGuess = true;
+        this.guessedPassing = false;
         this.waitingTime = Game.defaultWaitingTime;
     }
 
@@ -272,7 +276,7 @@ class Game{
                 this.resetCell();
             })
             this.cell.append(buttonShow);
-            
+
             console.log(this.config.gradeArray);
             console.log(this.content + ", " + this.solution);
 
@@ -304,11 +308,29 @@ class Game{
         const buttonMiddle = Game.createButton(Game.guessButtonGeneralClass, "middle", "This");
         const buttonLower = Game.createButton(Game.guessButtonGeneralClass, "lower", "Lower");
 
+        const buttonPlus = Game.createButton(Game.guessButtonGeneralClass, "plus", "+");
+        const buttonMinus = Game.createButton(Game.guessButtonGeneralClass, "minus", "-");
+
+        const guessDiv = document.createElement("div");
+        guessDiv.classList.add("guess-div");
+        guessDiv.append(buttonMinus, this.guessText, buttonPlus);
+
         buttonHigher.addEventListener("click", (event) => this.onHigher(event));
         buttonMiddle.addEventListener("click", (event) => this.onMiddle(event));
         buttonLower.addEventListener("click", (event) => this.onLower(event));
 
-        gameWrapper.append(this.guessText, buttonHigher, buttonMiddle, buttonLower);
+        buttonPlus.addEventListener("click", (event) => {
+            event.stopPropagation();
+            this.currentGuess++;
+            this.guessText.textContent = this.config.gradeArray[this.currentGuess];
+        });
+        buttonMinus.addEventListener("click", (event) => {
+            event.stopPropagation();
+            this.currentGuess--;
+            this.guessText.textContent = this.config.gradeArray[this.currentGuess];
+        });
+
+        gameWrapper.append(guessDiv, buttonHigher, buttonMiddle, buttonLower);
         this.cell.append(gameWrapper);
     }
 
@@ -318,7 +340,8 @@ class Game{
         this.advanceGame("high");
 
         if(this.currentGuess < this.solution){
-            this.firstGuess ? this.pass() : this.right();
+            //if guessing above passing grade for the first time
+            this.currentGuess >= this.passingIndex && !this.guessedPassing ? this.pass() : this.right();
             this.updateGuess();
         }else{
             this.wrong();
@@ -334,7 +357,7 @@ class Game{
             this.right();
             this.updateGuess();
         }else{
-            this.firstGuess ? this.pass() : this.wrong();
+            this.currentGuess >= this.passingIndex && !this.guessedPassing ? this.pass() : this.wrong();
         }
     }
 
@@ -400,7 +423,7 @@ class Game{
     }
 
     pass(){
-        this.firstGuess = false;
+        this.guessedPassing = true;
         this.guessText.textContent = "You passed!!";
         this.guessText.classList.add(Game.RIGHT_CLASS);
     

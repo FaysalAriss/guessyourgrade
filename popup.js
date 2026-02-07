@@ -1,5 +1,4 @@
-import { DEFAULT_LETTER_SETTINGS, DEFAULT_NUMBER_SETTINGS, 
-        processLetterGrades, resetLetterSettingsToDefault, 
+import {processLetterGrades, resetLetterSettingsToDefault, 
         processNumberGrades, resetNumberSettingsToDefault } from './scripts/default.js';
 
 class IllegalArgumentError extends Error{
@@ -16,8 +15,9 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelector("#number-grade-save").addEventListener("click", (event) => {handleButtonClick(event.currentTarget, saveNumberGrade)});
 })
 
-function confirmButton(button, newText="Succesfull", delay=3000){
+async function confirmButton(button, newText="Succesfull", delay=3000){
     const currentText = button.textContent;
+    if(newText == currentText) { return; }
     button.textContent = newText;
     setTimeout(() => {
         button.textContent = currentText;
@@ -29,7 +29,7 @@ async function handleButtonClick(button, action){
 
     try{
         await action();
-        confirmButton(button, "Succesfull");
+        confirmButton(button);
     }catch(error){
         if(error instanceof IllegalArgumentError){
             confirmButton(button, error.message);
@@ -50,22 +50,26 @@ async function resetLetterGrade(){
 }
 
 async function saveLetterGrade(){
-    const letterGrades = document.getElementById("letter-grade-input").value;
-    const letterHeaderSearch = document.getElementById("letter-grade-header").value;
-    const letterMatchWhole = document.getElementById("letter-grade-checkbox").checked;
-    
-    if(!letterGrades || !letterHeaderSearch){
-        throw new IllegalArgumentError("Error: empty field");
+    const toSave = {
+        letterGrades: document.getElementById("letter-grade-input").value,
+        letterHeaderSearch: document.getElementById("letter-grade-header").value,
+        letterMatchWhole: document.getElementById("letter-grade-checkbox").checked,
+        letterPassing: document.getElementById("letter-passing-input").value
     }
 
-    const letterGradesArray = processLetterGrades(letterGrades);
+    
+    for(const field of Object.values(toSave)){
+        if(field == null || field === "" || Number.isNaN(field)){
+            throw new IllegalArgumentError("Error: empty field");
+        }
+    }
 
-    await chrome.storage.sync.set({
-        letterGrades: letterGrades, 
-        letterGradesArray: letterGradesArray,
-        letterHeaderSearch: letterHeaderSearch,
-        letterMatchWhole: letterMatchWhole
-    });
+    toSave.letterGradesArray = processLetterGrades(toSave.letterGrades);
+    if(toSave.letterGradesArray.indexOf(toSave.letterPassing) === -1){
+        throw new IllegalArgumentError("Error: invalid passing grade");
+    }
+
+    await chrome.storage.sync.set(toSave);
 }
 
 async function resetNumberGrade(){
@@ -75,46 +79,51 @@ async function resetNumberGrade(){
 }
 
 async function saveNumberGrade(){
-    const numberGradeMin = Number(document.getElementById("number-grade-minimum").value);
-    const numberGradeMax = Number(document.getElementById("number-grade-maximum").value);
-    const numberGradeResolution = Number(document.getElementById("number-grade-resolution").value);
-    const numberHeaderSearch = document.getElementById("number-grade-header").value;
-    const numberMatchWhole = document.getElementById("number-grade-checkbox").checked;
+    const toSave = {
+        numberGradeMin: document.getElementById("number-grade-minimum").valueAsNumber,
+        numberGradeMax: document.getElementById("number-grade-maximum").valueAsNumber,
+        numberGradeResolution: document.getElementById("number-grade-resolution").valueAsNumber,
+        numberHeaderSearch: document.getElementById("number-grade-header").value,
+        numberMatchWhole: document.getElementById("number-grade-checkbox").checked,
+        numberPassing: document.getElementById("number-passing-input").value
+    }
 
-    if(numberGradeResolution <= 0){
+    for(const field of Object.values(toSave)){
+        if(field == null || field === "" || Number.isNaN(field)){
+            console.log(field);
+            console.log(field == null);
+            console.log(field === "");
+            console.log(Number.isNaN(field));
+            throw new IllegalArgumentError("Error: empty field");
+        }
+    }
+
+    if(toSave.numberGradeResolution <= 0){
         throw new IllegalArgumentError("Resolution must be positive");
     }
 
-    if((!numberGradeMin && numberGradeMin !== 0) || (!numberGradeMax && numberGradeMax !== 0) || !numberGradeResolution || !numberHeaderSearch){
-        throw new IllegalArgumentError("Error: empty field");
+    if(toSave.numberGradeMin >= toSave.numberGradeMax){
+        throw new IllegalArgumentError("Min must < max");
     }
 
-    let numberGrades = processNumberGrades(numberGradeMin, numberGradeMax, numberGradeResolution);
+    toSave.numberGradesArray = processNumberGrades(toSave.numberGradeMin, toSave.numberGradeMax, toSave.numberGradeResolution);
+    if(toSave.numberGradesArray.indexOf(toSave.numberPassing) === -1){
+        throw new IllegalArgumentError("Error: invalid passing grade");
+    }
 
     //save without array if it's too large, process in content script instead
     try{
-        await chrome.storage.sync.set({
-            numberGradeMin: numberGradeMin, 
-            numberGradeMax: numberGradeMax, 
-            numberGradeResolution: numberGradeResolution, 
-            numberGradesArray: numberGrades, 
-            numberHeaderSearch: numberHeaderSearch, 
-            numberMatchWhole: numberMatchWhole
-        });
+        await chrome.storage.sync.set(toSave);
 
         if(chrome.runtime.lastError){throw new Error(chrome.runtime.lastError.message);}
 
     }catch(error){
         if(error.message.includes("quota exceeded")){
             console.warn("Storage quota exceeded. Falling back to raw settings only.")
-            await chrome.storage.sync.set({
-                numberGradeMin: numberGradeMin, 
-                numberGradeMax: numberGradeMax, 
-                numberGradeResolution: numberGradeResolution, 
-                numberGradesArray: [], 
-                numberHeaderSearch: numberHeaderSearch, 
-                numberMatchWhole: numberMatchWhole
-            });
+
+            toSave.numberGradesArray = [];
+
+            await chrome.storage.sync.set(toSave);
         }else{
             throw new Error(error.message);
         }
@@ -123,26 +132,19 @@ async function saveNumberGrade(){
 
 // Restores select box and checkbox state using the preferences
 const restoreOptions = () => {
-  chrome.storage.sync.get({
-        letterGrades: DEFAULT_LETTER_SETTINGS.letterGrade,
-        letterHeaderSearch: DEFAULT_LETTER_SETTINGS.letterHeaderSearch,
-        letterMatchWhole: DEFAULT_LETTER_SETTINGS.letterMatchWhole,
-        numberGradeMin: DEFAULT_NUMBER_SETTINGS.numberGradeMin, 
-        numberGradeMax: DEFAULT_NUMBER_SETTINGS.numberGradeMax, 
-        numberGradeResolution: DEFAULT_NUMBER_SETTINGS.numberGradeResolution,
-        numberHeaderSearch: DEFAULT_NUMBER_SETTINGS.numberHeaderSearch,
-        numberMatchWhole: DEFAULT_NUMBER_SETTINGS.numberMatchWhole
-    }, (items) => {
+  chrome.storage.sync.get(null, (items) => {
         document.getElementById('letter-grade-input').value = items.letterGrades;
         document.getElementById("letter-grade-header").value = items.letterHeaderSearch;
         document.getElementById("letter-grade-checkbox").checked = items.letterMatchWhole;
+        document.getElementById("letter-passing-input").checked = items.letterPassing;
         document.getElementById('number-grade-minimum').value = items.numberGradeMin;
         document.getElementById('number-grade-maximum').value = items.numberGradeMax;
         document.getElementById('number-grade-resolution').value = items.numberGradeResolution;
         document.getElementById("number-grade-header").value = items.numberHeaderSearch;
         document.getElementById("number-grade-checkbox").checked = items.numberMatchWhole;
+        document.getElementById("number-passing-input").checked = items.numberPassing;
     }
   );
 };
 
-document.addEventListener('DOMContentLoaded', restoreOptions);
+document.addEventListener('DOMContentLoaded', restoreOptions());
