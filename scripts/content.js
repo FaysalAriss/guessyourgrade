@@ -333,6 +333,8 @@ class Game{
             this.guessText.textContent = this.config.gradeArray[this.currentGuess];
         });
 
+        this.cell.style.maxWidth = "fit-content";
+        this.cell.style.width = "fit-content";
         gameWrapper.append(guessDiv, buttonHigher, buttonMiddle, buttonLower);
         this.cell.append(gameWrapper);
     }
