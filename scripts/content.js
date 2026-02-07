@@ -1,5 +1,3 @@
-//TODO: load settings once for whole page instead of table? probably not worth the effort
-
 //copy pasted since import/export doesn't work for content script. and other solutions add too much clutter
 function processNumberGrades(min, max, resolution){
     let numberGrades = [];
@@ -56,6 +54,7 @@ class GameMaster{
     }
 
     async initializeSearch(){
+        console.log("Fetching header search settings");
         const result = await chrome.storage.sync.get(["letterHeaderSearch", "letterMatchWhole", "numberHeaderSearch", "numberMatchWhole"]);
 
         //check if strings are null/undefined/empty
@@ -156,6 +155,7 @@ class GameMaster{
     }
 
     async initializeGradeArrays(){
+        console.log("Fetching grade settings");
         const result = await chrome.storage.sync.get(["letterGradesArray", "letterPassing", "numberGradesArray", "numberPassing"]);
 
         if(!result.letterGradesArray || result.letterGradesArray.length === 0){
@@ -471,7 +471,7 @@ const observer = new MutationObserver(async (mutations) => {
         if(!table){ return; }
 
         console.log("Table found");
-        console.log(table);
+        //console.log(table);
 
         if(table.dataset.mutated == "true"){
             console.log("Table already mutated, skipping");
@@ -489,7 +489,7 @@ const observer = new MutationObserver(async (mutations) => {
         console.log("Table found, attempting to begin game");
         const game = new GameMaster(tableCopy);
         await game.start();
-        table.replaceWith(game.getTable()); //doesn't seem to activate observer?
+        table.replaceWith(game.getTable());
     }
 })
 

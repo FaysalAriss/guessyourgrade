@@ -147,4 +147,4 @@ const restoreOptions = () => {
   );
 };
 
-document.addEventListener('DOMContentLoaded', restoreOptions());
+document.addEventListener('DOMContentLoaded', restoreOptions);
