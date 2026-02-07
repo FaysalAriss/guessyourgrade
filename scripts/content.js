@@ -266,9 +266,16 @@ class Game{
 
         if(this.solution == -1){
             this.cell.textContent = "Grade not in given list";
+            const buttonShow = Game.createButton(Game.guessButtonGeneralClass, "show", "Show anyway");
+            buttonShow.addEventListener("click", (event) => {
+                event.stopPropagation();
+                this.resetCell();
+            })
+            this.cell.append(buttonShow);
+            
             console.log(this.config.gradeArray);
             console.log(this.content + ", " + this.solution);
-            //TODO: add show anyway button?
+
             return;
         }
 
