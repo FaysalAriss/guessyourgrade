@@ -1,9 +1,13 @@
 <h1>
-  <img src="/images/icons/icon-128.png" width="32" height="32"/>
+  <img src="/images/icons/icon-128.png" width="48" height="48"/>
   <span> Grade Roulette </span>
 </h1>
 
-![demo](/images/readme/maindemo.gif)
+<video autoplay loop muted playsinline poster="/images/readme/main-demo-fallback.png">
+  <source src="/images/readme/main-demo.mp4" type="video/mp4">
+  <img src="/images/readme/main-demo-fallback.png" alt="Main demo image">
+</video>
+
 A web extension to make getting your final grades a little more fun. Lets you guess what you got. Developped to work for Workday, mainly for UBC. 
 
 # Installation
