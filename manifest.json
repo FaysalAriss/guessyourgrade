@@ -1,6 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Grade Roulette",
+    "description": "Makes a game out of getting your final grades back. Hides your grade on Workday and makes you guess what you got.",
     "version": "1.0",
     "icons": {
         "16": "images/icons/icon-16.png",
@@ -9,7 +10,7 @@
         "128": "images/icons/icon-128.png"
     },
     "action": {
-        "default_popup": "popup.html"
+        "default_popup": "popup/popup.html"
     },
     "permissions": [
         "storage"
@@ -26,7 +27,13 @@
     ],
     "background": {
         "service_worker": "scripts/background.js",
+        "scripts": ["scripts/background.js"],
         "type": "module"
+    },
+    "browser_specific_settings": {
+        "gecko": {
+        "id": "grade-roulette@FaysalAriss"
+        }
     }
     
 }

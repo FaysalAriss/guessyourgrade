@@ -225,7 +225,7 @@ class Search{
     /**
      * 
      * @param {string} toFind, text to find
-     * @param {boolean} matchWhole if need to match the entire string
+     * @param {boolean} matchWhole, if need to match the entire string
      */
     constructor(toFind, matchWhole){
         this.toFind = toFind;
@@ -260,9 +260,9 @@ class Game{
         this.originalContent = this.cell.innerHTML;
 
         this.low = 0;
-        this.high = this.config.gradeArray.length;
+        this.high = this.config.gradeArray.length-1;
         this.lowest = 0;
-        this.highest = this.config.gradeArray.length;
+        this.highest = this.config.gradeArray.length-1;
         this.guessedPassing = false;
         this.waitingTime = Game.defaultWaitingTime;
     }
@@ -324,12 +324,12 @@ class Game{
 
         buttonPlus.addEventListener("click", (event) => {
             event.stopPropagation();
-            this.currentGuess++;
+            this.currentGuess = Math.max(Math.min(this.currentGuess+1, this.highest), this.lowest);
             this.guessText.textContent = this.config.gradeArray[this.currentGuess];
         });
         buttonMinus.addEventListener("click", (event) => {
             event.stopPropagation();
-            this.currentGuess--;
+            this.currentGuess = Math.max(Math.min(this.currentGuess-1, this.highest), this.lowest);
             this.guessText.textContent = this.config.gradeArray[this.currentGuess];
         });
 
@@ -461,9 +461,7 @@ class Game{
 
 }
 
-
-//check if there's a table after we've navigated the page
-const observer = new MutationObserver(async (mutations) => {
+async function handleMutation(){
     console.log("Page mutated, checking for table");
     let tables = document.querySelectorAll('[data-testid="table"]');
 
@@ -491,22 +489,27 @@ const observer = new MutationObserver(async (mutations) => {
         await game.start();
         table.replaceWith(game.getTable());
     }
-})
-
-
-//wait for main content as it should be available on all the pages so we won't be waiting forever, which is why we don't check for table
-function addObserverIfDesiredElementAvailable() {
-    console.log("Searching for main content");
-    var element = document.querySelector('#mainContent');
-    if(!element) {
-        //The element we need does not exist yet, wait 500ms and try again
-        window.setTimeout(addObserverIfDesiredElementAvailable,500);
-        return;
-    }
-    console.log("Found main content:")
-    console.log(element);
-    var config = {childList: true, subtree: true};
-    observer.observe(element, config);
 }
 
-addObserverIfDesiredElementAvailable();
+//observer for url changes, SPA changes url on page navigation
+let lastUrl = location.href;
+const urlObserver = new MutationObserver(() => {
+    if (location.href !== lastUrl) {
+        lastUrl = location.href;
+        console.log("URL Change detected to:", lastUrl);
+        handleMutation();
+    }
+});
+
+//observer for content changes
+const contentObserver = new MutationObserver(() => {
+    handleMutation();
+});
+
+//start both observers
+const config = { subtree: true, childList: true };
+urlObserver.observe(document.documentElement, config);
+contentObserver.observe(document.documentElement, config);
+
+//check for table right away, just in case
+handleMutation();

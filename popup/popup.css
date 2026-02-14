@@ -1,0 +1,225 @@
+/* 1. Global Variables - Change these to change the whole look */
+:root {
+    --primary: #4f46e5;      /* Indigo - very modern primary color */
+    --primary-hover: #4338ca;
+    --bg: #f8fafc;           /* Soft off-white */
+    --card-bg: #ffffff;      /* Pure white for containers */
+    --text-main: #1e293b;    /* Slate dark */
+    --text-muted: #64748b;   /* Gray for labels */
+    --border: #e2e8f0;       /* Light border */
+    --radius: 10px;
+    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+* {
+    box-sizing: border-box;
+    font-family: "Inter", "Segoe UI", "Fira Sans", sans-serif;
+}
+
+body {
+    background-color: var(--bg);
+    color: var(--text-main);
+    margin: 0;
+    padding: 20px;
+    width: 380px; /* Locked width feels more stable for extensions */
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* 2. Fieldset/Card Styling */
+fieldset {
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+legend {
+    background: var(--primary);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    transform: translateY(-5px); /* Slightly raised look */
+}
+
+/* 3. Inputs & Labels */
+.label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+    border-bottom: none !important; /* Removing the old dotted line */
+}
+
+input[type="text"], 
+input[type="number"] {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.95rem;
+    color: var(--text-main);
+    background: #fdfdfd;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* 4. Buttons */
+button {
+    cursor: pointer;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border: 1px solid var(--border);
+    transition: all 0.15s ease;
+}
+
+/* Primary Button (Save) */
+button[id*="save"] {
+    background: var(--primary);
+    color: white;
+    border: none;
+    flex-grow: 2; /* Makes save button wider than reset */
+}
+
+button[id*="save"]:hover {
+    background: var(--primary-hover);
+}
+
+/* Secondary Button (Reset) */
+button[id*="reset"] {
+    background: white;
+    color: var(--text-muted);
+}
+
+button[id*="reset"]:hover {
+    background: #f1f5f9;
+    color: #ef4444; /* Red hint on reset hover */
+}
+
+/* Button Container */
+div:has(> button) {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+/* 5. Tooltips (Modernized) */
+.tooltip {
+    position: relative;
+    cursor: help;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Adding a small info icon style via CSS */
+.tooltip::after {
+    content: "ⓘ";
+    margin-left: 4px;
+    font-size: 0.7rem;
+    opacity: 0.6;
+}
+
+.tooltipimage{
+  width: 100%;
+}
+
+.tooltiptext {
+    visibility: hidden;
+    width: 180px;
+    background-color: #1e293b; /* Dark slate tooltip */
+    color: #fff;
+    text-align: left;
+    padding: 10px;
+    border-radius: 8px;
+    position: absolute;
+    z-index: 10;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    font-size: 11px;
+    line-height: 1.4;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    text-transform: none
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Positioning fixes for tooltips */
+.tooltiptext.pos-left{
+  top: -5px;
+  right: 105%;
+}
+.tooltiptext.pos-right{
+  top: -5px;
+  left: 105%;
+}
+.tooltiptext.pos-top{
+  bottom: 100%;
+  left: 65%;
+  margin-left: -65px;
+}
+.tooltiptext.pos-bottom{
+  top: 100%;
+  left: 50%;
+  margin-left: -65px;
+}
+
+/* 6. Layout Helpers */
+.row { display: flex; gap: 8px; align-items: flex-end; }
+.col { display: flex; flex-direction: column; gap: 4px; }
+.checkbox-input { 
+    display: flex; 
+    gap: 8px; 
+    align-items: center; 
+    margin-top: 4px; 
+    background: #f1f5f9;
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
+
+/*Fallback for firefox*/
+
+#letter-grade-input{
+  width: 230px;
+}
+
+
+#number-grade-minimum, #number-grade-maximum, #number-grade-resolution{
+  width: 70px;
+}
+
+
+/*For chrome*/
+@supports (field-sizing: content){
+  input{
+      field-sizing: content;
+  }
+
+  #number-grade-minimum, #number-grade-maximum, #number-grade-resolution{
+    width: auto;
+  }
+
+  #letter-grade-input{
+    width: auto;
+  }
+} 
