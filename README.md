@@ -3,10 +3,12 @@
   <span> Grade Roulette </span>
 </h1>
 
-<img src="/images/readme/main-demo.gif" 
-     alt="Main demo" 
-     onerror="this.onerror=null;this.src='/images/readme/main-demo-fallback.png';">
-     
+<picture>
+  <source srcset="https://github.com/FaysalAriss/guessyourgrade/blob/main/images/readme/main-demo.gif" type="image/gif">
+  
+  <img src="https://github.com/FaysalAriss/guessyourgrade/blob/main/images/readme/main-demo-fallback.png" alt="Main demo image">
+</picture>
+
 A web extension to make getting your final grades a little more fun. Lets you guess what you got. Developped to work for Workday, mainly for UBC. 
 
 # Installation
