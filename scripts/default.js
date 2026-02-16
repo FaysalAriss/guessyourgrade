@@ -1,11 +1,11 @@
-export const DEFAULT_LETTER_SETTINGS = {
+const DEFAULT_LETTER_SETTINGS = {
     letterGrades: "F, D, C-, C, C+, B-, B, B+, A-, A, A+",
     letterHeaderSearch: "Grade",
     letterMatchWhole: true,
     letterPassing: "F"
 }
 
-export const DEFAULT_NUMBER_SETTINGS = {
+const DEFAULT_NUMBER_SETTINGS = {
     numberGradeMin: 0,
     numberGradeMax: 100,
     numberGradeResolution: 1,
@@ -14,23 +14,23 @@ export const DEFAULT_NUMBER_SETTINGS = {
     numberPassing: 49
 }
 
-export async function resetLetterSettingsToDefault(){
+async function resetLetterSettingsToDefault(){
     const settingsToSave = {... DEFAULT_LETTER_SETTINGS}; //make a copy for immutability
     settingsToSave.letterGradesArray = processLetterGrades(settingsToSave.letterGrades); //add processed data
     return chrome.storage.sync.set(settingsToSave);
 }
 
-export function processLetterGrades(rawString){
+function processLetterGrades(rawString){
     return rawString.split(",").map(item => item.trim()).filter(item => (item || item === 0));
 }
 
-export async function resetNumberSettingsToDefault(){
+async function resetNumberSettingsToDefault(){
     const settingsToSave = {... DEFAULT_NUMBER_SETTINGS}; //make a copy for immutability
     settingsToSave.numberGradesArray = processNumberGrades(settingsToSave.numberGradeMin, settingsToSave.numberGradeMax, settingsToSave.numberGradeResolution); //add processed data
     return chrome.storage.sync.set(settingsToSave);
 }
 
-export function processNumberGrades(min, max, resolution){
+function processNumberGrades(min, max, resolution){
     let numberGrades = [];
     for(let i = min; i <= max; i += resolution){
         //round num to resolution

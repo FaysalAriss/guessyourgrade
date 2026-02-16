@@ -1,4 +1,4 @@
-import {resetLetterSettingsToDefault, resetNumberSettingsToDefault } from './default.js';
+importScripts('default.js');
 
 chrome.runtime.onInstalled.addListener(async (details) => {
     if(details.reason === chrome.runtime.OnInstalledReason.INSTALL){

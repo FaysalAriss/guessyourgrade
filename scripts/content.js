@@ -1,21 +1,7 @@
-//copy pasted since import/export doesn't work for content script. and other solutions add too much clutter
-function processNumberGrades(min, max, resolution){
-    let numberGrades = [];
-    for(let i = min; i <= max; i += resolution){
-        //round num to resolution
-        //to precision gets rid of the imprecision of floating point arithmetic
-        //parsefloat to remove trailing 0s
-        const num = Number(parseFloat((Math.round(i/resolution) * resolution).toPrecision(12)));
-        numberGrades.push(num);
-    }
-
-    return numberGrades;
-}
-
 /**
  * Sets up and begins the game for a table
  */
-class GameMaster{
+class GameManager{
     numberSearch;
     letterSearch;
 
@@ -57,12 +43,12 @@ class GameMaster{
         console.log("Fetching header search settings");
         const result = await chrome.storage.sync.get(["letterHeaderSearch", "letterMatchWhole", "numberHeaderSearch", "numberMatchWhole"]);
 
-        //check if strings are null/undefined/empty
-        //check if bools are null/undefined
-        if(!result.letterHeaderSearch || result.letterMatchWhole == null ||
-            !result.numberHeaderSearch || result.numberMatchWhole == null){
-            console.log(result);
-            throw Error("Header settings invalid or couldn't load them");
+
+        for(const field of Object.values(result)){
+            if(field == null || field === ""){
+                console.log(result);
+                throw Error("Header settings invalid or couldn't load them");
+            }
         }
 
         this.letterSearch = new Search(result.letterHeaderSearch, result.letterMatchWhole);
@@ -158,7 +144,7 @@ class GameMaster{
         console.log("Fetching grade settings");
         const result = await chrome.storage.sync.get(["letterGradesArray", "letterPassing", "numberGradesArray", "numberPassing"]);
 
-        if(!result.letterGradesArray || result.letterGradesArray.length === 0){
+        if((!result.letterGradesArray || result.letterGradesArray.length === 0) || (result.letterPassing == null || result.letterPassing === "")){
             console.log(result.letterGradesArray);
             throw Error("Letter grade settings are invalid or couldn't load them"); 
         }
@@ -166,7 +152,7 @@ class GameMaster{
         this.letterGradesArray = result.letterGradesArray;
         this.letterPassingIndex = this.letterGradesArray.indexOf(result.letterPassing);
 
-        if(!result.numberGradesArray || result.numberGradesArray.length === 0){
+        if((!result.numberGradesArray || result.numberGradesArray.length === 0) || (result.numberPassing == null | Number.isNaN(result.numberPassing))){
             const rawData = await chrome.storage.sync.get(["numberGradeMin", "numberGradeMax", "numberGradeResolution"]);
 
             if(typeof rawData.numberGradeMin === 'undefined' ||
@@ -298,7 +284,7 @@ class Game{
 
         //canvas for confetti
         this.canvas = document.createElement('canvas');
-        this.canvas.id = `confetti-${Math.random().toString(36).substring(2, 9)}`;
+        this.canvas.id = `confetti-${Math.random().toString(36).substring(2, 9)}`; //random ID so confetti library can differentiate canvases
         gameWrapper.appendChild(this.canvas);
 
         //current guess text
@@ -324,12 +310,12 @@ class Game{
 
         buttonPlus.addEventListener("click", (event) => {
             event.stopPropagation();
-            this.currentGuess = Math.max(Math.min(this.currentGuess+1, this.highest), this.lowest);
+            this.currentGuess = Math.max(Math.min(this.currentGuess+1, this.highest), this.lowest); //max and min to keep current guess within boundaries
             this.guessText.textContent = this.config.gradeArray[this.currentGuess];
         });
         buttonMinus.addEventListener("click", (event) => {
             event.stopPropagation();
-            this.currentGuess = Math.max(Math.min(this.currentGuess-1, this.highest), this.lowest);
+            this.currentGuess = Math.max(Math.min(this.currentGuess-1, this.highest), this.lowest); //max and min to keep current guess within boundaries
             this.guessText.textContent = this.config.gradeArray[this.currentGuess];
         });
 
@@ -464,16 +450,17 @@ class Game{
 async function handleMutation(){
     console.log("Page mutated, checking for table");
     let tables = document.querySelectorAll('[data-testid="table"]');
+    //console.log(tables);
 
     for(const table of tables){
-        if(!table){ return; }
+        if(!table){ continue; }
 
         console.log("Table found");
         //console.log(table);
 
         if(table.dataset.mutated == "true"){
             console.log("Table already mutated, skipping");
-            return;
+            continue;
         }
 
         //tag table as mutated so we don't touch it again
@@ -485,7 +472,7 @@ async function handleMutation(){
         table.textContent = "";
 
         console.log("Table found, attempting to begin game");
-        const game = new GameMaster(tableCopy);
+        const game = new GameManager(tableCopy);
         await game.start();
         table.replaceWith(game.getTable());
     }

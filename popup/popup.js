@@ -1,6 +1,3 @@
-import {processLetterGrades, resetLetterSettingsToDefault, 
-        processNumberGrades, resetNumberSettingsToDefault } from '../scripts/default.js';
-
 class IllegalArgumentError extends Error{
     constructor(message){
         super(message);
@@ -85,7 +82,7 @@ async function saveNumberGrade(){
         numberGradeResolution: document.getElementById("number-grade-resolution").valueAsNumber,
         numberHeaderSearch: document.getElementById("number-grade-header").value,
         numberMatchWhole: document.getElementById("number-grade-checkbox").checked,
-        numberPassing: document.getElementById("number-passing-input").value
+        numberPassing: document.getElementById("number-passing-input").valueAsNumber
     }
 
     for(const field of Object.values(toSave)){
@@ -108,6 +105,9 @@ async function saveNumberGrade(){
 
     toSave.numberGradesArray = processNumberGrades(toSave.numberGradeMin, toSave.numberGradeMax, toSave.numberGradeResolution);
     if(toSave.numberGradesArray.indexOf(toSave.numberPassing) === -1){
+        console.log(toSave.numberGradesArray);
+        console.log(toSave.numberPassing);
+        console.log(toSave.numberGradesArray.indexOf(toSave.numberPassing));
         throw new IllegalArgumentError("Error: invalid passing grade");
     }
 
