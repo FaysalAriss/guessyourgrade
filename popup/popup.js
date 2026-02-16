@@ -1,3 +1,6 @@
+/**
+ * Used to indicate the input is not valid
+ */
 class IllegalArgumentError extends Error{
     constructor(message){
         super(message);
@@ -5,6 +8,7 @@ class IllegalArgumentError extends Error{
     }
 }
 
+//associate actions with the reset and save buttons
 document.addEventListener("DOMContentLoaded", () => {
     document.querySelector("#letter-grade-reset").addEventListener("click", (event) => {handleButtonClick(event.currentTarget, resetLetterGrade)});
     document.querySelector("#letter-grade-save").addEventListener("click", (event) => {handleButtonClick(event.currentTarget, saveLetterGrade)});
@@ -12,6 +16,14 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelector("#number-grade-save").addEventListener("click", (event) => {handleButtonClick(event.currentTarget, saveNumberGrade)});
 })
 
+/**
+ * Displays `newText` for `delay` on `button` then reverts to original
+ * Mutates `button` temporarily
+ * 
+ * @param {html button} button - the button to modify
+ * @param {string} newText - the text to temporarily display as the button's text
+ * @param {number} delay - how long `newText` should be displayed for
+ */
 async function confirmButton(button, newText="Succesfull", delay=3000){
     const currentText = button.textContent;
     if(newText == currentText) { return; }
@@ -21,6 +33,12 @@ async function confirmButton(button, newText="Succesfull", delay=3000){
     }, delay);
 }
 
+/**
+ * Handles button click to catch errors and display success/error status. Also ensures button cannot be reactivated before previous action fully processed.
+ * 
+ * @param {html button} button
+ * @param {function} action - action to perform when `button` is pressed
+ */
 async function handleButtonClick(button, action){
     button.disabled = true;
 
@@ -28,6 +46,8 @@ async function handleButtonClick(button, action){
         await action();
         confirmButton(button);
     }catch(error){
+        //inform of the specifics of the error if they can fix it
+        //otherwise generic error message
         if(error instanceof IllegalArgumentError){
             confirmButton(button, error.message);
         }else{
@@ -39,6 +59,9 @@ async function handleButtonClick(button, action){
     }
 }
 
+/**
+ * Resets, saves and displays the default letter grade settings
+ */
 async function resetLetterGrade(){
     await resetLetterSettingsToDefault();
     restoreOptions();
@@ -46,6 +69,9 @@ async function resetLetterGrade(){
     console.log("Reset and save complete");
 }
 
+/**
+ * Validates, processes and saves the letter grade settings the user has inputted
+ */
 async function saveLetterGrade(){
     const toSave = {
         letterGrades: document.getElementById("letter-grade-input").value,
@@ -54,27 +80,35 @@ async function saveLetterGrade(){
         letterPassing: document.getElementById("letter-passing-input").value
     }
 
-    
+    //validate inputs
     for(const field of Object.values(toSave)){
         if(field == null || field === "" || Number.isNaN(field)){
             throw new IllegalArgumentError("Error: empty field");
         }
     }
 
+    //process inputs
     toSave.letterGradesArray = processLetterGrades(toSave.letterGrades);
     if(toSave.letterGradesArray.indexOf(toSave.letterPassing) === -1){
         throw new IllegalArgumentError("Error: invalid passing grade");
     }
 
+    //save
     await chrome.storage.sync.set(toSave);
 }
 
+/**
+ * Resets, saves and displays the default number grade settings
+ */
 async function resetNumberGrade(){
     await resetNumberSettingsToDefault();
     restoreOptions();
     console.log("Reset and save complete");
 }
 
+/**
+ * Validates, processes and saves the number grade settings the user has inputted
+ */
 async function saveNumberGrade(){
     const toSave = {
         numberGradeMin: document.getElementById("number-grade-minimum").valueAsNumber,
@@ -85,6 +119,7 @@ async function saveNumberGrade(){
         numberPassing: document.getElementById("number-passing-input").valueAsNumber
     }
 
+    //validate inputs
     for(const field of Object.values(toSave)){
         if(field == null || field === "" || Number.isNaN(field)){
             console.log(field);
@@ -103,6 +138,7 @@ async function saveNumberGrade(){
         throw new IllegalArgumentError("Min must < max");
     }
 
+    //process inputs
     toSave.numberGradesArray = processNumberGrades(toSave.numberGradeMin, toSave.numberGradeMax, toSave.numberGradeResolution);
     if(toSave.numberGradesArray.indexOf(toSave.numberPassing) === -1){
         console.log(toSave.numberGradesArray);
@@ -111,7 +147,7 @@ async function saveNumberGrade(){
         throw new IllegalArgumentError("Error: invalid passing grade");
     }
 
-    //save without array if it's too large, process in content script instead
+    //save without number grade array if it's too large, process in content script instead
     try{
         await chrome.storage.sync.set(toSave);
 
@@ -130,7 +166,9 @@ async function saveNumberGrade(){
     }
 }
 
-// Restores select box and checkbox state using the preferences
+/**
+ * Restores the user's options to their appropriate element based on the saved settings
+ */
 const restoreOptions = () => {
   chrome.storage.sync.get(null, (items) => {
         document.getElementById('letter-grade-input').value = items.letterGrades;
@@ -147,4 +185,5 @@ const restoreOptions = () => {
   );
 };
 
+//restore user's settings when popup opens
 document.addEventListener('DOMContentLoaded', restoreOptions);
