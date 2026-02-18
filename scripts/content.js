@@ -43,7 +43,7 @@ async function handleMutation(){
         const tableCopy = table.cloneNode(true);
 
         console.log("Hiding table")
-        table.textContent = "";
+        //table.textContent = "";
 
         console.log("Table found, attempting to begin game");
         const game = new GameManager(tableCopy);
@@ -55,7 +55,6 @@ async function handleMutation(){
 
 /**
  * Manages setup and starting games for all cells in a table
- * 
  */
 class GameManager{
     #table;
@@ -377,6 +376,7 @@ class Game{
         //setup
         this.content = this.#config.parseCell(this.#cell);      //the grade in the cell
         this.solution = config.gradeArray.indexOf(this.content);//the index in the grade array of the grade originally in this cell
+        //this.solution = 0;
         this.currentGuess = this.#config.passingIndex;          //the current index of the guess
         this.passingIndex = this.#config.passingIndex;
 
@@ -488,7 +488,7 @@ class Game{
 
         if(this.currentGuess < this.solution){
             //if guessing above passing grade for the first time
-            this.currentGuess >= (this.passingIndex && !this.guessedPassing) ? this.#pass() : this.#right();
+            (this.currentGuess >= this.passingIndex) && !this.guessedPassing ? this.#pass() : this.#right();
             this.#updateGuess(); //update the guess as they are going in the right direction
         }else{
             this.#wrong();
@@ -509,7 +509,7 @@ class Game{
             this.#right();
             this.#updateGuess();
         }else{
-            this.currentGuess >= (this.passingIndex && !this.guessedPassing) ? this.#pass() : this.#wrong();
+            (this.currentGuess > this.passingIndex) && !this.guessedPassing ? this.#pass() : this.#wrong();
         }
     }
 

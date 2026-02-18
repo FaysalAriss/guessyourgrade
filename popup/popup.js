@@ -1,19 +1,9 @@
-/**
- * Used to indicate the input is not valid
- */
-class IllegalArgumentError extends Error{
-    constructor(message){
-        super(message);
-        this.name = "IllegalArgumentError";
-    }
-}
-
 //associate actions with the reset and save buttons
 document.addEventListener("DOMContentLoaded", () => {
     document.querySelector("#letter-grade-reset").addEventListener("click", (event) => {handleButtonClick(event.currentTarget, resetLetterGrade)});
-    document.querySelector("#letter-grade-save").addEventListener("click", (event) => {handleButtonClick(event.currentTarget, saveLetterGrade)});
+    document.querySelector("#letter-grade-save").addEventListener("click", (event) => {handleButtonClick(event.currentTarget, () => saveLetterGrade(fetchLetterGrade()))});
     document.querySelector("#number-grade-reset").addEventListener("click", (event) => {handleButtonClick(event.currentTarget, resetNumberGrade)});
-    document.querySelector("#number-grade-save").addEventListener("click", (event) => {handleButtonClick(event.currentTarget, saveNumberGrade)});
+    document.querySelector("#number-grade-save").addEventListener("click", (event) => {handleButtonClick(event.currentTarget, () => saveNumberGrade(fetchNumberGrade()))});
 })
 
 /**
@@ -70,31 +60,17 @@ async function resetLetterGrade(){
 }
 
 /**
- * Validates, processes and saves the letter grade settings the user has inputted
+ * Gets the inputs from the user for the letter grade settings
+ * 
+ * @returns {object literal} the inputs
  */
-async function saveLetterGrade(){
-    const toSave = {
+function fetchLetterGrade(){
+    return {
         letterGrades: document.getElementById("letter-grade-input").value,
         letterHeaderSearch: document.getElementById("letter-grade-header").value,
         letterMatchWhole: document.getElementById("letter-grade-checkbox").checked,
         letterPassing: document.getElementById("letter-passing-input").value
     }
-
-    //validate inputs
-    for(const field of Object.values(toSave)){
-        if(field == null || field === "" || Number.isNaN(field)){
-            throw new IllegalArgumentError("Error: empty field");
-        }
-    }
-
-    //process inputs
-    toSave.letterGradesArray = processLetterGrades(toSave.letterGrades);
-    if(toSave.letterGradesArray.indexOf(toSave.letterPassing) === -1){
-        throw new IllegalArgumentError("Error: invalid passing grade");
-    }
-
-    //save
-    await chrome.storage.sync.set(toSave);
 }
 
 /**
@@ -106,63 +82,20 @@ async function resetNumberGrade(){
     console.log("Reset and save complete");
 }
 
+
 /**
- * Validates, processes and saves the number grade settings the user has inputted
+ * Gets the inputs from the user for the number grade settings
+ * 
+ * @returns {object literal} the inputs
  */
-async function saveNumberGrade(){
-    const toSave = {
+function fetchNumberGrade(){
+    return {
         numberGradeMin: document.getElementById("number-grade-minimum").valueAsNumber,
         numberGradeMax: document.getElementById("number-grade-maximum").valueAsNumber,
         numberGradeResolution: document.getElementById("number-grade-resolution").valueAsNumber,
         numberHeaderSearch: document.getElementById("number-grade-header").value,
         numberMatchWhole: document.getElementById("number-grade-checkbox").checked,
         numberPassing: document.getElementById("number-passing-input").valueAsNumber
-    }
-
-    //validate inputs
-    for(const field of Object.values(toSave)){
-        if(field == null || field === "" || Number.isNaN(field)){
-            console.log(field);
-            console.log(field == null);
-            console.log(field === "");
-            console.log(Number.isNaN(field));
-            throw new IllegalArgumentError("Error: empty field");
-        }
-    }
-
-    if(toSave.numberGradeResolution <= 0){
-        throw new IllegalArgumentError("Resolution must be positive");
-    }
-
-    if(toSave.numberGradeMin >= toSave.numberGradeMax){
-        throw new IllegalArgumentError("Min must < max");
-    }
-
-    //process inputs
-    toSave.numberGradesArray = processNumberGrades(toSave.numberGradeMin, toSave.numberGradeMax, toSave.numberGradeResolution);
-    if(toSave.numberGradesArray.indexOf(toSave.numberPassing) === -1){
-        console.log(toSave.numberGradesArray);
-        console.log(toSave.numberPassing);
-        console.log(toSave.numberGradesArray.indexOf(toSave.numberPassing));
-        throw new IllegalArgumentError("Error: invalid passing grade");
-    }
-
-    //save without number grade array if it's too large, process in content script instead
-    try{
-        await chrome.storage.sync.set(toSave);
-
-        if(chrome.runtime.lastError){throw new Error(chrome.runtime.lastError.message);}
-
-    }catch(error){
-        if(error.message.includes("quota exceeded")){
-            console.warn("Storage quota exceeded. Falling back to raw settings only.")
-
-            toSave.numberGradesArray = [];
-
-            await chrome.storage.sync.set(toSave);
-        }else{
-            throw new Error(error.message);
-        }
     }
 }
 
@@ -174,13 +107,13 @@ const restoreOptions = () => {
         document.getElementById('letter-grade-input').value = items.letterGrades;
         document.getElementById("letter-grade-header").value = items.letterHeaderSearch;
         document.getElementById("letter-grade-checkbox").checked = items.letterMatchWhole;
-        document.getElementById("letter-passing-input").checked = items.letterPassing;
+        document.getElementById("letter-passing-input").value = items.letterPassing;
         document.getElementById('number-grade-minimum').value = items.numberGradeMin;
         document.getElementById('number-grade-maximum').value = items.numberGradeMax;
         document.getElementById('number-grade-resolution').value = items.numberGradeResolution;
         document.getElementById("number-grade-header").value = items.numberHeaderSearch;
         document.getElementById("number-grade-checkbox").checked = items.numberMatchWhole;
-        document.getElementById("number-passing-input").checked = items.numberPassing;
+        document.getElementById("number-passing-input").value = items.numberPassing;
     }
   );
 };

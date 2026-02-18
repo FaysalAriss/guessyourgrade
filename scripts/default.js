@@ -15,6 +15,39 @@ const DEFAULT_NUMBER_SETTINGS = {
 }
 
 /**
+ * Used to indicate the input is not valid
+ */
+class IllegalArgumentError extends Error{
+    constructor(message){
+        super(message);
+        this.name = "IllegalArgumentError";
+    }
+}
+
+/**
+ * Validates, processes and saves the letter grade settings the user has inputted
+ * 
+ * @param {object literal} toSave - the settings to save
+ */
+async function saveLetterGrade(toSave){
+    //validate inputs
+    for(const field of Object.values(toSave)){
+        if(field == null || field === "" || Number.isNaN(field)){
+            throw new IllegalArgumentError("Error: empty field");
+        }
+    }
+
+    //process inputs
+    toSave.letterGradesArray = processLetterGrades(toSave.letterGrades);
+    if(toSave.letterGradesArray.indexOf(toSave.letterPassing) === -1){
+        throw new IllegalArgumentError("Error: invalid passing grade");
+    }
+
+    //save
+    await chrome.storage.sync.set(toSave);
+}
+
+/**
  * Resets the letter grade settings back to default based on `DEFAULT_LETTER_SETTINGS`
  * 
  * @returns {promise} - data saving status
@@ -34,6 +67,59 @@ async function resetLetterSettingsToDefault(){
  */
 function processLetterGrades(rawString){
     return rawString.split(",").map(item => item.trim()).filter(item => (item || item === 0));
+}
+
+/**
+ * Validates, processes and saves the number grade settings the user has inputted
+ * 
+ * @param {object literal} toSave - the settings to save
+ */
+async function saveNumberGrade(toSave){
+    //validate inputs
+    for(const field of Object.values(toSave)){
+        if(field == null || field === "" || Number.isNaN(field)){
+            console.log(field);
+            console.log(field == null);
+            console.log(field === "");
+            console.log(Number.isNaN(field));
+            throw new IllegalArgumentError("Error: empty field");
+        }
+    }
+
+    if(toSave.numberGradeResolution <= 0){
+        throw new IllegalArgumentError("Resolution must be positive");
+    }
+
+    if(toSave.numberGradeMin >= toSave.numberGradeMax){
+        throw new IllegalArgumentError("Must min < max");
+    }
+
+    //process inputs
+    toSave.numberGradesArray = processNumberGrades(toSave.numberGradeMin, toSave.numberGradeMax, toSave.numberGradeResolution);
+    if(toSave.numberGradesArray.indexOf(toSave.numberPassing) === -1){
+        console.log(toSave.numberGradesArray);
+        console.log(toSave.numberPassing);
+        console.log(toSave.numberGradesArray.indexOf(toSave.numberPassing));
+        throw new IllegalArgumentError("Error: invalid passing grade");
+    }
+
+    //save without number grade array if it's too large, process in content script instead
+    try{
+        await chrome.storage.sync.set(toSave);
+
+        if(chrome.runtime.lastError){throw new Error(chrome.runtime.lastError.message);}
+
+    }catch(error){
+        if(error.message.includes("quota exceeded")){
+            console.warn("Storage quota exceeded. Falling back to raw settings only.")
+
+            toSave.numberGradesArray = [];
+
+            await chrome.storage.sync.set(toSave);
+        }else{
+            throw new Error(error.message);
+        }
+    }
 }
 
 /**
