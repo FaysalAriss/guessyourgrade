@@ -19,8 +19,8 @@ Pending review for web stores.
 
 # Features
 
-<img src="/images/media/screenshot1.png" height="24" alt="Main game explanation" valign="middle">
-<img src="/images/media/screenshot2.png" height="24" alt="Settings preview" valign="middle">
+<img src="/images/media/screenshot1.png" height="300" alt="Main game explanation" valign="middle">
+<img src="/images/media/screenshot2.png" height="300" alt="Settings preview" valign="middle">
 
 # Issues and contributions
 
