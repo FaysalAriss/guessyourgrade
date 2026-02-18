@@ -13,7 +13,14 @@ Currently only available through manual installation:
 
 <img src="https://raw.githubusercontent.com/alrra/browser-logos/90fdf03c/src/chrome/chrome.svg" width="24" alt="Chrome" valign="middle"> [Chrome install instructions](https://dev.to/ben/how-to-install-chrome-extensions-manually-from-github-1612)
 
-<img src="https://raw.githubusercontent.com/alrra/browser-logos/58881b84c4d73adc03c06fa2c275a7abee02d935/src/firefox/firefox.svg" width="24" alt="Chrome" valign="middle"> [Firefox install instructions](https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/)
+<img src="https://raw.githubusercontent.com/alrra/browser-logos/58881b84c4d73adc03c06fa2c275a7abee02d935/src/firefox/firefox.svg" width="24" alt="Firefox" valign="middle"> [Firefox install instructions](https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/)
+
+Pending review for web stores.
+
+# Features
+
+<img src="/images/media/screenshot1.png" height="24" alt="Main game explanation" valign="middle">
+<img src="/images/media/screenshot2.png" height="24" alt="Settings preview" valign="middle">
 
 # Issues and contributions
 
