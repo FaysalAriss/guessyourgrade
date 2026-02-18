@@ -5,7 +5,7 @@
 
 ![Main demo](/images/readme/main-demo.gif)
 
-A web extension to make getting your final grades a little more fun. Lets you guess what you got. Developped to work for Workday, mainly for UBC. 
+A web extension to make getting your final grades a little more fun. Hides your grades and lets you guess what you got. Developed to work for Workday, mainly for UBC.
 
 # Installation
 

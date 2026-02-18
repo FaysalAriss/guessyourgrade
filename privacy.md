@@ -1,0 +1,1 @@
+Grade Roulette does not collect, store, or transmit any personal information or user data. All processing occurs locally on the user's machine.
